@@ -1,0 +1,13 @@
+# --- Pastas de Compilação do .NET ---
+bin/
+obj/
+
+# --- Configurações do Editor (VS Code) ---
+.vscode/
+
+# --- Bancos de Dados SQLite locais ---
+*.sqlite
+*.sqlite-journal
+
+# --- Configurações de Ambiente Local ---
+appsettings.Development.json
