@@ -1,0 +1,1 @@
+public sealed record HyperLink(string Rel, string Href, string Method);

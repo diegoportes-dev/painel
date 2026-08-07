@@ -1,0 +1,20 @@
+@crud_HostAddress = http://localhost:5164
+
+### 1. Efetuar Login para obter o Token
+# @name login
+POST {{crud_HostAddress}}/login
+Content-Type: application/json
+
+{
+  "email": "diego@teste.com",
+  "senhaHash": "D230881p"
+}
+
+### Guardar o token retornado
+@authToken = {{login.response.body.token}}
+
+### 2. Buscar Endereços usando o Token obtido
+GET {{crud_HostAddress}}/enderecos
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
