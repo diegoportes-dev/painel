@@ -34,7 +34,7 @@ public static class LoginRoute
             {
                 Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString())]),
                 // Expires = DateTime.UtcNow.AddHours(2), //Duas horas de validade
-                Expires = DateTime.UtcNow.AddSeconds( timeoutOptions.Value.TokenResetSenha ),
+                Expires = DateTime.UtcNow.AddMinutes( timeoutOptions.Value.TokenResetSenha ),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(chaveEmBytes), SecurityAlgorithms.HmacSha256Signature)
             };
             
@@ -64,7 +64,7 @@ public static class LoginRoute
             // Define o token e o tempo de expiração (15 minutos a partir de agora)
             usuario.TokenReset = tokenReset; // Adicione esse campo na sua Model de Usuário
             // usuario.TokenResetExpiracao = DateTime.UtcNow.AddMinutes(1); // Adicione esse campo na sua Model
-            usuario.TokenResetExpiracao = DateTime.Now.AddSeconds( timeoutOptions.Value.TokenResetExpiracao );
+            usuario.TokenResetExpiracao = DateTime.Now.AddMinutes( timeoutOptions.Value.TokenResetExpiracao );
 
             await db.SaveChangesAsync();
 
@@ -73,7 +73,7 @@ public static class LoginRoute
             string mensagemHtml = $@"
                 <h2>Olá,</h2>
                 <p>Você solicitou a redefinição de sua senha.</p>
-                <p>Seu token de recuperação é válido por 15 minutos:</p>
+                <p>Seu token de recuperação é válido por { timeoutOptions.Value.TokenResetExpiracao } minutos:</p>
                 <h3 style='color: #007bff; font-size: 24px;'>{tokenReset}</h3>
                 <p>Se você não solicitou este e-mail, ignore-o.</p>";
 
@@ -125,5 +125,5 @@ public static class LoginRoute
 public class TimeOutSettings
 {
     public int TokenResetSenha { get; set; }
-    public int TokenResetExpiracao { get; set; }
+    public float TokenResetExpiracao { get; set; }
 }
