@@ -46,6 +46,13 @@ builder.Services.AddAuthentication(options =>
 });
 
 
+// Mapeia a seção do appsettings para a classe C#
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+// Registra o serviço de e-mail
+builder.Services.AddTransient<IEmailService, MailKitEmailService>();
+
+
 builder.Services.AddAuthorization();
 
 // 3. Configurar o OpenAPI para o Scalar

@@ -8,6 +8,8 @@ obj/
 # --- Bancos de Dados SQLite locais ---
 *.sqlite
 *.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 
 # --- Configurações de Ambiente Local ---
 appsettings.Development.json
