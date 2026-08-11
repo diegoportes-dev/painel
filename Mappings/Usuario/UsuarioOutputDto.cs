@@ -2,7 +2,7 @@ public class UsuarioOutputDto
 {
     public Guid Id { get; set; }
     public string Email { get; set; } = string.Empty;
-    public string SenhaHash { get; set; } = string.Empty;
+    public PerfilSummaryDto Perfil { get; set; } = null!;
         
     //Auditoria
     public string Ativo { get; set; }     
@@ -11,11 +11,8 @@ public class UsuarioOutputDto
     public DateTime? Updated { get; set; }
     public string? UpdatedBy { get; set; }
 
-    public Guid PerfilId { get; set; }
-    public PerfilSummaryDto Perfil { get; set; } = null!;
-
     public UsuarioOutputDto() { }
-    public UsuarioOutputDto(UsuarioModel item) => (Id, Email, SenhaHash, PerfilId, Perfil, Ativo, Created, CreatedBy, Updated, UpdatedBy) = (item.Id, item.Email, item.SenhaHash, item.PerfilId, item.Perfil is null ? null : new PerfilSummaryDto(item.Perfil), item.Ativo, item.Created, item.CreatedBy, item.Updated, item.UpdatedBy );
+    public UsuarioOutputDto(UsuarioModel item) => (Id, Email, Perfil, Ativo, Created, CreatedBy, Updated, UpdatedBy) = (item.Id, item.Email, item.Perfil is null ? null : new PerfilSummaryDto(item.Perfil), item.Ativo, item.Created, item.CreatedBy, item.Updated, item.UpdatedBy );
   
 }
 

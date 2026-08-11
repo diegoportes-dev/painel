@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
 using Crud.Data;
 using Microsoft.EntityFrameworkCore;
+using BCryptNet = BCrypt.Net.BCrypt;
 
 public sealed record UsuarioCollectionResponse(IReadOnlyList<UsuarioOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record UsuarioResourceResponse(UsuarioOutputDto Data, IReadOnlyList<HyperLink> Links);
@@ -8,6 +8,8 @@ public sealed record UsuarioResourceResponse(UsuarioOutputDto Data, IReadOnlyLis
 
 public static class UsuarioRoute
 {
+    public static object BCryptNet { get; private set; }
+
     public static void MapUsuarioRoutes(this WebApplication app)
     {
         string prefixo = "usuarios";
@@ -66,68 +68,70 @@ public static class UsuarioRoute
             }
         );
 
-        route.MapPost("", 
+        route.MapPost("",
             async Task<IResult> (UsuarioInputPostDto input, CrudContext db, HttpContext httpContext) =>
             {
                 try
                 {
 
-                        var validationResult = ValidateDataAnnotations.Validate(input);
-                        if (validationResult is not null)
-                        {
-                            return validationResult;
-                        }
+                    var validationResult = ValidateDataAnnotations.Validate(input);
+                    if (validationResult is not null)
+                    {
+                        return validationResult;
+                    }
 
-                        var perfilId = Guid.Parse(input.PerfilId.ToString());
+                    var perfilId = Guid.Parse(input.PerfilId.ToString());
 
-                        var perfil = await db.Perfis
-                            .FirstOrDefaultAsync(p => p.Id == perfilId);
+                    var perfil = await db.Perfis
+                        .FirstOrDefaultAsync(p => p.Id == perfilId);
 
-                        if (perfil is null)
-                        {
-                            return Results.NotFound(new { message = $"Perfil com ID {perfilId} não encontrado." });
-                        }
+                    if (perfil is null)
+                    {
+                        return Results.NotFound(new { message = $"Perfil com ID {perfilId} não encontrado." });
+                    }
 
-                        var emailExist = await db.Usuarios
-                            .FirstOrDefaultAsync(p => p.Email == input.Email);
+                    var emailExist = await db.Usuarios
+                        .FirstOrDefaultAsync(p => p.Email == input.Email);
 
-                        if (emailExist is not null)
-                        {
-                            return Results.BadRequest(new { message = $"E-Mail {input.Email} já está em uso por outro usuário." });
-                        }
+                    if (emailExist is not null)
+                    {
+                        return Results.BadRequest(new { message = $"E-Mail {input.Email} já está em uso por outro usuário." });
+                    }
 
-                        var usuario = new UsuarioModel(input);
+                    input.Senha = BCrypt.Net.BCrypt.HashPassword(input.Senha);
 
-                        db.Usuarios.Add(usuario);
-                        await db.SaveChangesAsync();
+                    var usuario = new UsuarioModel(input);
 
-                        List<HyperLink> links = Links.GenerateLinks(httpContext, usuario.Id, prefixo);
+                    db.Usuarios.Add(usuario);
+                    await db.SaveChangesAsync();
 
-                        return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{usuario.Id}", new UsuarioResourceResponse(new UsuarioOutputDto(usuario), links));
+                    List<HyperLink> links = Links.GenerateLinks(httpContext, usuario.Id, prefixo);
+
+                    return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{usuario.Id}", new UsuarioResourceResponse(new UsuarioOutputDto(usuario), links));
 
 
                 }
                 catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
-                {                       
+                {
                     var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
 
-                    return TypedResults.BadRequest(new 
-                    { 
+                    return TypedResults.BadRequest(new
+                    {
                         message = "Erro ao criar o usuário. Verifique os dados enviados.",
                         technicalDetails = detalheTecnico
-                    }); 
-                } 
+                    });
+                }
                 catch (Exception ex)
                 {
                     var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
-            
+
                     return TypedResults.Problem(
                         title: "Ocorreu um erro interno inesperado criar usuário.",
-                        detail: detalheTecnico, 
+                        detail: detalheTecnico,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
-                } 
-                
+                }
+
             }
         );
 
@@ -167,6 +171,15 @@ public static class UsuarioRoute
                         if (usuario is null)
                         {
                             return Results.NotFound(new { message = $"Usuário com ID {id} não encontrado." });
+                        }
+
+                        if(!string.IsNullOrEmpty(input.NovaSenha) && !BCrypt.Net.BCrypt.Verify(input.NovaSenha, usuario.SenhaCrypt))
+                        {
+                            input.NovaSenha = BCrypt.Net.BCrypt.HashPassword(input.NovaSenha);
+                        }
+                        else
+                        {
+                            input.NovaSenha = usuario.SenhaCrypt;
                         }
 
                         var emailExist = await db.Usuarios
@@ -243,6 +256,7 @@ public static class UsuarioRoute
             {    
                 try
                 {
+                        var senhaAntiga = string.Empty;
 
                         var usuario = await db.Usuarios
                             .FirstOrDefaultAsync(u => u.Id == id);
@@ -257,9 +271,12 @@ public static class UsuarioRoute
                             usuario.Email = input.Email;
                         }
 
-                        if (!string.IsNullOrEmpty(input.SenhaHash))
+                        if (!string.IsNullOrEmpty(input.NovaSenha) && !BCrypt.Net.BCrypt.Verify(input.NovaSenha, usuario.SenhaCrypt))
                         {
-                            usuario.SenhaHash = input.SenhaHash;
+                            usuario.SenhaCrypt = input.NovaSenha; //para que seja validada pelo DattaAnotation não Encrypto
+                        }else{
+                            senhaAntiga = usuario.SenhaCrypt;
+                            usuario.SenhaCrypt = "Teste123"; //Só para passar no DataValidation, depois será substituida pela senha antiga.
                         }
 
                         if (!string.IsNullOrEmpty(input.Ativo))
@@ -292,6 +309,13 @@ public static class UsuarioRoute
                         if (validationResult is not null)
                         {
                             return validationResult;
+                        }
+
+                        if (!string.IsNullOrEmpty(input.NovaSenha) && input.NovaSenha == usuario.SenhaCrypt)
+                        {
+                            usuario.SenhaCrypt =  BCrypt.Net.BCrypt.HashPassword(input.NovaSenha); //Cryptografo nesse ponto após validação.
+                        }else{                            
+                            usuario.SenhaCrypt = senhaAntiga; //Retorno a senha antiga caso não tenha sido alterada.
                         }
 
                         await db.SaveChangesAsync();

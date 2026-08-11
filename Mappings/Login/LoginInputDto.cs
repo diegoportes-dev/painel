@@ -13,8 +13,8 @@ public class LoginInputDto
     [Required(ErrorMessage = "A Senha do usuário é obrigatória.")]
     [StringLength(8, MinimumLength = 6, ErrorMessage = "A Senha do usuário deve ter entre 6 e 8 caracteres.")]
     [RegularExpression(@"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{6,8}$", ErrorMessage = "A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número.")]
-    public string SenhaHash { get; set; } = string.Empty;
+    public string Senha { get; set; } = string.Empty;
 
     public LoginInputDto(){}
-    public LoginInputDto(UsuarioModel item) => ( Email, SenhaHash) = ( item.Email, item.SenhaHash);
+    public LoginInputDto(UsuarioModel item) => ( Email, Senha) = ( item.Email, item.SenhaCrypt );
 }

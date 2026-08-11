@@ -3,6 +3,7 @@ using System;
 using Crud.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace crud.Migrations
 {
     [DbContext(typeof(CrudContext))]
-    partial class CrudContextModelSnapshot : ModelSnapshot
+    [Migration("20260810160929_AjusteTabelaUsuario")]
+    partial class AjusteTabelaUsuario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -121,10 +124,7 @@ namespace crud.Migrations
                     b.Property<string>("SenhaCrypt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TokenReset")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("TokenResetExpiracao")
+                    b.Property<string>("SenhaHash")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("Updated")

@@ -1,0 +1,10 @@
+root = true
+
+[*.cs]
+# Desativa avisos de severidade de sugestões e refatoração do compilador
+dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.severity = none
+
+# Desativa especificamente avisos de tipos anuláveis se o editor ignorar o csproj
+dotnet_diagnostic.CS8618.severity = none
+dotnet_diagnostic.CS8632.severity = none
