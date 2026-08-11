@@ -4,15 +4,15 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BCryptNet = BCrypt.Net.BCrypt;
-
+using Microsoft.Extensions.Options;
 
 public static class LoginRoute
-{    
+{
     public static void MapLoginRoutes(this WebApplication app, byte[] chaveEmBytes)
     {
         var route = app.MapGroup("/login");
 
-        route.MapPost("", async Task<IResult> (LoginInputDto input, CrudContext db) =>
+        route.MapPost("", async Task<IResult> (LoginInputDto input, CrudContext db, IOptions<TimeOutSettings> timeoutOptions) =>
         {
             var errosValidacao = ValidateDataAnnotations.Validate(input);
             if (errosValidacao != null)
@@ -34,7 +34,7 @@ public static class LoginRoute
             {
                 Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString())]),
                 // Expires = DateTime.UtcNow.AddHours(2), //Duas horas de validade
-                Expires = DateTime.UtcNow.AddSeconds(30),  //Trinta segundos de validade para teste 
+                Expires = DateTime.UtcNow.AddSeconds( timeoutOptions.Value.TokenResetSenha ),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(chaveEmBytes), SecurityAlgorithms.HmacSha256Signature)
             };
             
@@ -45,7 +45,7 @@ public static class LoginRoute
         });
 
         // 2. [POST] /login/esqueci-senha (Gera o Token de Recuperação)
-        route.MapPost("/esqueci-senha", async Task<IResult> (EsqueciSenhaInputDto input, CrudContext db,  IEmailService emailService) =>
+        route.MapPost("/esqueci-senha", async Task<IResult> (EsqueciSenhaInputDto input, CrudContext db,  IEmailService emailService, IOptions<TimeOutSettings> timeoutOptions) =>
         {
             var errosValidacao = ValidateDataAnnotations.Validate(input);
             if (errosValidacao != null) return errosValidacao;
@@ -64,21 +64,21 @@ public static class LoginRoute
             // Define o token e o tempo de expiração (15 minutos a partir de agora)
             usuario.TokenReset = tokenReset; // Adicione esse campo na sua Model de Usuário
             // usuario.TokenResetExpiracao = DateTime.UtcNow.AddMinutes(1); // Adicione esse campo na sua Model
-            usuario.TokenResetExpiracao = DateTime.Now.AddMinutes(1); // Adicione esse campo na sua Model
+            usuario.TokenResetExpiracao = DateTime.Now.AddSeconds( timeoutOptions.Value.TokenResetExpiracao );
 
             await db.SaveChangesAsync();
 
-            //  // Cria o corpo do e-mail formatado em HTML
-            // string assunto = "Recuperação de Senha";
-            // string mensagemHtml = $@"
-            //     <h2>Olá,</h2>
-            //     <p>Você solicitou a redefinição de sua senha.</p>
-            //     <p>Seu token de recuperação é válido por 15 minutos:</p>
-            //     <h3 style='color: #007bff; font-size: 24px;'>{tokenReset}</h3>
-            //     <p>Se você não solicitou este e-mail, ignore-o.</p>";
+             // Cria o corpo do e-mail formatado em HTML
+            string assunto = "Recuperação de Senha";
+            string mensagemHtml = $@"
+                <h2>Olá,</h2>
+                <p>Você solicitou a redefinição de sua senha.</p>
+                <p>Seu token de recuperação é válido por 15 minutos:</p>
+                <h3 style='color: #007bff; font-size: 24px;'>{tokenReset}</h3>
+                <p>Se você não solicitou este e-mail, ignore-o.</p>";
 
-            // // Dispara o e-mail de forma assíncrona em segundo plano
-            // await emailService.EnviarEmailAsync(usuario.Email, assunto, mensagemHtml);
+            // Dispara o e-mail de forma assíncrona em segundo plano
+            await emailService.EnviarEmailAsync(usuario.Email, assunto, mensagemHtml);
 
             // TODO: Aqui você integraria seu serviço de e-mail (ex: SendGrid, SMTP)
             // Por enquanto, exibimos no console para testes locais:
@@ -122,3 +122,8 @@ public static class LoginRoute
     }
 }
 
+public class TimeOutSettings
+{
+    public int TokenResetSenha { get; set; }
+    public int TokenResetExpiracao { get; set; }
+}

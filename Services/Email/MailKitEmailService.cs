@@ -33,4 +33,5 @@ public class MailKitEmailService : IEmailService
         await smtp.SendAsync(email);
         await smtp.DisconnectAsync(true);
     }
+
 }

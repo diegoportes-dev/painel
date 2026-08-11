@@ -49,6 +49,9 @@ builder.Services.AddAuthentication(options =>
 // Mapeia a seção do appsettings para a classe C#
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
+// Adicione isso no seu Program.cs antes do builder.Build()
+builder.Services.Configure<TimeOutSettings>(builder.Configuration.GetSection("TimeOutSettings"));
+
 // Registra o serviço de e-mail
 builder.Services.AddTransient<IEmailService, MailKitEmailService>();
 
@@ -71,6 +74,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // 4. ATIVAR MIDDLEWARES DE SEGURANÇA (Obrigatório antes das rotas)
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -115,6 +119,6 @@ app.MapEnderecoRoutes();
 app.MapPerfilRoutes();
 app.MapUsuarioRoutes();
 
-app.UseHttpsRedirection();
+
 app.Run();
 

@@ -66,7 +66,7 @@ public static class UsuarioRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPost("",
             async Task<IResult> (UsuarioInputPostDto input, CrudContext db, HttpContext httpContext) =>
