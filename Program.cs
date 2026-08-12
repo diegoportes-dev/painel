@@ -45,7 +45,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
 // Mapeia a seção do appsettings para a classe C#
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
@@ -77,40 +76,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
-
-// app.MapPost("/login",  async(LoginInputDto model, CrudContext db) =>
-// {
-//     var usuario = await db.Usuarios
-//         .Include(u => u.Perfil)
-//         .FirstOrDefaultAsync(u => u.Email == model.Email);
-    
-//     if (usuario == null || usuario.SenhaHash != model.SenhaHash)
-//     {
-//         return Results.Unauthorized();
-//     }
-
-//     // NOVA VALIDAÇÃO: Bloqueia usuários inativos
-//     // if (usuario.Ativo == "N")
-//     // {
-//     //     return Results.Json(new { erro = "Esta conta está inativa." }, statusCode: 403);
-//     // }
-
-//     // Simula uma validação de usuário com sucesso
-//     var tokenHandler = new JwtSecurityTokenHandler();
-//     var tokenDescriptor = new SecurityTokenDescriptor
-//     {
-//         Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString())]),
-//          // Expires = DateTime.UtcNow.AddHours(2), //Duas horas de validade
-//         Expires = DateTime.UtcNow.AddSeconds(30),  //Trinta segundos de validade para teste 
-//         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(chaveEmBytes), SecurityAlgorithms.HmacSha256Signature)
-//     };
-    
-//     var token = tokenHandler.CreateToken(tokenDescriptor);
-//     var tokenString = tokenHandler.WriteToken(token);
-
-//     return Results.Ok(new { token = tokenString });
-// });
 
 // Suas rotas existentes
 app.MapLoginRoutes(chaveEmBytes);

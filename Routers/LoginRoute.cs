@@ -22,7 +22,7 @@ public static class LoginRoute
 
             var usuario = await db.Usuarios
             .Include(u => u.Perfil)
-            .FirstOrDefaultAsync(u => u.Email == input.Email);
+            .FirstOrDefaultAsync(u => u.Email == input.Email && u.Ativo.ToUpper() == "S" );
     
             if (usuario == null || !BCryptNet.Verify(input.Senha, usuario.SenhaCrypt))
             {

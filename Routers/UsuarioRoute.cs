@@ -266,8 +266,16 @@ public static class UsuarioRoute
                             return Results.NotFound(new { message = $"Usuário com ID {id} não encontrado." });
                         }
 
-                        if (!string.IsNullOrEmpty(input.Email))
+                        if (!string.IsNullOrEmpty(input.Email) && input.Email != usuario.Email)
                         {
+                            var emailExist = await db.Usuarios
+                            .FirstOrDefaultAsync(p => p.Email == input.Email);
+
+                            if (emailExist is not null)
+                            {
+                                return Results.BadRequest(new { message = $"E-Mail {input.Email} já está em uso por outro usuário." });
+                            }
+
                             usuario.Email = input.Email;
                         }
 
