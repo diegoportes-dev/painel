@@ -32,7 +32,13 @@ public static class LoginRoute
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString())]),
+                Subject = new ClaimsIdentity([
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                    new Claim(ClaimTypes.Name , usuario.Email),
+                    // new Claim(ClaimTypes.Role, usuario.Perfil?.Nome ?? "Usuario"),
+                    // Usando parâmetros customizados (Criados por você)
+                    new Claim("PerfilId", usuario.PerfilId.ToString()),
+                ]),
                 // Expires = DateTime.UtcNow.AddHours(2), //Duas horas de validade
                 Expires = DateTime.UtcNow.AddMinutes( timeoutOptions.Value.TokenResetSenha ),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(chaveEmBytes), SecurityAlgorithms.HmacSha256Signature)
