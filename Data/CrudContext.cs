@@ -19,7 +19,13 @@ public class CrudContext() : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite(connectionString: "Data Source=crud.sqlite");
+        // optionsBuilder.UseSqlite(connectionString: "Data Source=crud.sqlite");
+
+        // Só usa o arquivo físico se o DbContext não tiver sido configurado por fora (via Injeção de Dependência)
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlite("Data Source=crud.sqlite");
+        }
         base.OnConfiguring(optionsBuilder);
     }
 
