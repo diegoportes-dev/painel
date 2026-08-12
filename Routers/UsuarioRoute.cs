@@ -5,7 +5,6 @@ using BCryptNet = BCrypt.Net.BCrypt;
 public sealed record UsuarioCollectionResponse(IReadOnlyList<UsuarioOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record UsuarioResourceResponse(UsuarioOutputDto Data, IReadOnlyList<HyperLink> Links);
 
-
 public static class UsuarioRoute
 {
     public static object BCryptNet { get; private set; }
@@ -39,26 +38,26 @@ public static class UsuarioRoute
 
                 var links = new List<HyperLink>
                 {
-                    new HyperLink("self", $"{baseUrl}/usuarios{pageQuery}", "GET"),
-                    new HyperLink("first", $"{baseUrl}/usuarios?page=1&pageSize={requestedPageSize}", "GET"),
-                    new HyperLink("last", $"{baseUrl}/usuarios?page={totalPages}&pageSize={requestedPageSize}", "GET"),
-                    new HyperLink("next", pageNumber < totalPages ? $"{baseUrl}/usuarios?page={pageNumber + 1}&pageSize={requestedPageSize}" : null, "GET"),
-                    new HyperLink("prev", pageNumber > 1 ? $"{baseUrl}/usuarios?page={pageNumber - 1}&pageSize={requestedPageSize}" : null, "GET")
+                    new HyperLink("self", $"{baseUrl}/{prefixo}{pageQuery}", "GET"),
+                    new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"),
+                    new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"),
+                    new HyperLink("next", pageNumber < totalPages ? $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}" : null, "GET"),
+                    new HyperLink("prev", pageNumber > 1 ? $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}" : null, "GET")
                 };
                 if (pageNumber > 1)
                 {
-                    links.Add(new HyperLink("prev", $"{baseUrl}/usuarios?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("prev", $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
                 }
 
                 if (pageNumber < totalPages)
                 {
-                    links.Add(new HyperLink("next", $"{baseUrl}/usuarios?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("next", $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
                 }
 
                 if (totalPages > 0)
                 {
-                    links.Add(new HyperLink("first", $"{baseUrl}/usuarios?page=1&pageSize={requestedPageSize}", "GET"));
-                    links.Add(new HyperLink("last", $"{baseUrl}/usuarios?page={totalPages}&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"));
                 }
 
                 return TypedResults.Ok(new UsuarioCollectionResponse(

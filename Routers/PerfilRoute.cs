@@ -36,25 +36,25 @@ public static class PerfilRoute
 
                 var links = new List<HyperLink>
                 {
-                    new("self", $"{baseUrl}/perfis{pageQuery}", "GET"),
-                    new("collection", $"{baseUrl}/perfis", "GET"),
-                    new("create", $"{baseUrl}/perfis", "POST")
+                    new("self", $"{baseUrl}/{prefixo}{pageQuery}", "GET"),
+                    new("collection", $"{baseUrl}/{prefixo}", "GET"),
+                    new("create", $"{baseUrl}/{prefixo}", "POST")
                 };
 
                 if (pageNumber > 1)
                 {
-                    links.Add(new HyperLink("prev", $"{baseUrl}/perfis?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("prev", $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
                 }
 
                 if (pageNumber < totalPages)
                 {
-                    links.Add(new HyperLink("next", $"{baseUrl}/perfis?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("next", $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
                 }
 
                 if (totalPages > 0)
                 {
-                    links.Add(new HyperLink("first", $"{baseUrl}/perfis?page=1&pageSize={requestedPageSize}", "GET"));
-                    links.Add(new HyperLink("last", $"{baseUrl}/perfis?page={totalPages}&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"));
+                    links.Add(new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"));
                 }
 
                 return TypedResults.Ok(new PerfilCollectionResponse(
