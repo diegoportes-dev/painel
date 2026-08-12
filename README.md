@@ -9,6 +9,8 @@ Uma API Minimalista desenvolvida em ASP.NET Core para operações de CRUD (Creat
 * **Entity Framework Core**
 * **SQLite** (Banco de dados local em arquivo)
 * **Scalar** (Documentação interativa e execução das APIs)
+* **MailKit** (Envio robusto e assíncrono de e-mails via SMTP)
+* **BCrypt.Net-Next** (Criptografia segura de senhas com hashing)
 
 ## 📦 Como Executar o Projeto
 
@@ -36,13 +38,60 @@ dotnet ef migrations add InitialCreate
 dotnet ef database update
 ```
 
-### 4. Rodar a Aplicação
+### 4. Configurar as Variáveis de Ambiente (`appsettings.json`)
+Antes de rodar a aplicação, abra o arquivo `appsettings.json` na raiz do projeto e configure as credenciais para o envio do link de recuperação de senha.
+
+#### 📧 Cenário A: Desenvolvimento Local (Mailtrap - Recomendado)
+Para testar o fluxo sem enviar e-mails reais e evitar bloqueios de IP, crie uma conta gratuita no [Mailtrap](https://mailtrap.io), acesse sua *Inbox* e copie as credenciais numéricas de SMTP:
+
+```json
+"EmailSettings": {
+  "SmtpServer": "sandbox.smtp.mailtrap.io",
+  "Port": 2525,
+  "SenderName": "Sistema de Teste",
+  "SenderEmail": "suporte@seudominio.com",
+  "Username": "SUO_CODIGO_NUMERICO", 
+  "Password": "SUA_SENHA_NUMERICA" 
+}
+```
+
+#### ✉️ Cenário B: Produção / Teste Real (Gmail)
+Caso queira disparar e-mails reais usando os servidores do Google, use a porta seguro TLS (`587`) e gere uma **Senha de App de 16 dígitos** no painel de segurança da sua Conta Google (a senha comum de login do e-mail será rejeitada):
+
+```json
+"EmailSettings": {
+  "SmtpServer": "://gmail.com",
+  "Port": 587,
+  "SenderName": "Seu App/Sistema",
+  "SenderEmail": "seu_usuario@gmail.com",
+  "Username": "seu_usuario@gmail.com", 
+  "Password": "abcd efgh ijkl mnop" 
+}
+```
+
+#### ⏱️ Ajustar Prazos de Expiração (`TimeOutSettings`)
+Defina os tempos limites do sistema em segundos para a validação dos tokens gerados:
+```json
+"TimeOutSettings" : {
+  "TokenResetSenha": 60,       // Tempo de vida do Token JWT gerado no login
+  "TokenResetExpiracao": 75    // Janela de validade do link de redefinição de senha
+}
+```
+
+### 5. Rodar a Aplicação
 ```bash
 dotnet run
 ```
 
 A API estará disponível no seguinte endereço local:
 * **`http://localhost:5164/`**
+
+## 🔐 Fluxo de Redefinição de Senha
+
+O sistema implementa uma arquitetura segura de recuperação de credenciais dividida em duas rotas:
+
+1. **`POST /login/esqueci-senha`**: O cliente envia o e-mail cadastrado. O sistema gera um Token criptográfico exclusivo (GUID) com prazo de expiração amarrado ao relógio do servidor, monta um e-mail com layout em HTML contendo um botão e dispara para o usuário através do serviço configurado.
+2. **`POST /login/resetar-senha`**: O frontend lê os parâmetros contidos na URL do link clicado pelo usuário e envia o token de validação junto com a nova senha digitada. O backend valida os limites do `TimeOutSettings` e, se aprovado, aplica o Hash seguro via **BCrypt** na nova credencial antes de atualizar o banco de dados.
 
 ## 🔌 Documentação e Execução das APIs (Scalar)
 
