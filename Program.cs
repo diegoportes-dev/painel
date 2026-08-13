@@ -2,6 +2,7 @@
 using Crud.Data;
 using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.OpenApi;
 using System.ComponentModel.DataAnnotations;
+using FluentValidation;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,6 +56,11 @@ builder.Services.Configure<TimeOutSettings>(builder.Configuration.GetSection("Ti
 // Registra o serviço de e-mail
 builder.Services.AddTransient<IEmailService, MailKitEmailService>();
 
+//Validadores
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+//Adiciona serviços de EXCEPTIONS unificado
+builder.Services.AddProblemDetails();
 
 builder.Services.AddAuthorization();
 
@@ -71,6 +78,38 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+
+app.UseExceptionHandler(exceptionApp =>
+{
+    exceptionApp.Run(async context =>
+    {
+        var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+
+        context.Response.ContentType = "application/json";
+
+        // Se for um erro de banco de dados (ex: DbUpdateException)
+        if (exception is Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "Erro ao processar a operação no banco de dados. Verifique os dados enviados.",
+                technicalDetails = dbEx.InnerException?.Message ?? dbEx.Message
+            });
+        }
+        // Para qualquer outro erro interno inesperado (Exception)
+        else if (exception is not null)
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await context.Response.WriteAsJsonAsync(new
+            {
+                title = "Ocorreu um erro interno inesperado no servidor.",
+                detail = exception.InnerException?.Message ?? exception.Message
+            });
+        }
+    });
+});
 
 // 4. ATIVAR MIDDLEWARES DE SEGURANÇA (Obrigatório antes das rotas)
 app.UseHttpsRedirection();

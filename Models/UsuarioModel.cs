@@ -15,7 +15,7 @@ public class UsuarioModel : AuditoriaModel
         Id = Guid.NewGuid();
         Email = input.Email;       
         SenhaCrypt = input.Senha;
-        PerfilId = input.PerfilId;
+        PerfilId = Guid.Parse(input.PerfilId.ToString());
     }
 
     public void UpdateUsuario(UsuarioInputPutDto input)

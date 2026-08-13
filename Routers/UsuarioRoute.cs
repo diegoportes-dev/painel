@@ -1,6 +1,7 @@
 using Crud.Data;
 using Microsoft.EntityFrameworkCore;
 using BCryptNet = BCrypt.Net.BCrypt;
+using FluentValidation;
 
 public sealed record UsuarioCollectionResponse(IReadOnlyList<UsuarioOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record UsuarioResourceResponse(UsuarioOutputDto Data, IReadOnlyList<HyperLink> Links);
@@ -65,71 +66,34 @@ public static class UsuarioRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        ).RequireAuthorization();
+        );
 
         route.MapPost("",
-            async Task<IResult> (UsuarioInputPostDto input, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (UsuarioInputPostDto input, CrudContext db, HttpContext httpContext, FluentValidation.IValidator<UsuarioInputPostDto> validator) =>
             {
-                try
+                
+                var validationResult = await validator.ValidateAsync(input);
+                if (!validationResult.IsValid)
                 {
-
-                    var validationResult = ValidateDataAnnotations.Validate(input);
-                    if (validationResult is not null)
-                    {
-                        return validationResult;
-                    }
-
-                    var perfilId = Guid.Parse(input.PerfilId.ToString());
-
-                    var perfil = await db.Perfis
-                        .FirstOrDefaultAsync(p => p.Id == perfilId);
-
-                    if (perfil is null)
-                    {
-                        return Results.NotFound(new { message = $"Perfil com ID {perfilId} não encontrado." });
-                    }
-
-                    var emailExist = await db.Usuarios
-                        .FirstOrDefaultAsync(p => p.Email == input.Email);
-
-                    if (emailExist is not null)
-                    {
-                        return Results.BadRequest(new { message = $"E-Mail {input.Email} já está em uso por outro usuário." });
-                    }
-
-                    input.Senha = BCrypt.Net.BCrypt.HashPassword(input.Senha);
-
-                    var usuario = new UsuarioModel(input);
-
-                    db.Usuarios.Add(usuario);
-                    await db.SaveChangesAsync();
-
-                    List<HyperLink> links = Links.GenerateLinks(httpContext, usuario.Id, prefixo);
-
-                    return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{usuario.Id}", new UsuarioResourceResponse(new UsuarioOutputDto(usuario), links));
-
-
+                    // Formata os erros em um dicionário amigável (Propriedade -> Mensagens de erro)
+                    var erros = validationResult.ToDictionary();
+                    return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = erros });
                 }
-                catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
-                {
-                    var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
 
-                    return TypedResults.BadRequest(new
-                    {
-                        message = "Erro ao criar o usuário. Verifique os dados enviados.",
-                        technicalDetails = detalheTecnico
-                    });
-                }
-                catch (Exception ex)
-                {
-                    var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
+                input.Senha = BCrypt.Net.BCrypt.HashPassword(input.Senha);
 
-                    return TypedResults.Problem(
-                        title: "Ocorreu um erro interno inesperado criar usuário.",
-                        detail: detalheTecnico,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
+                var usuario = new UsuarioModel(input);
+
+                db.Usuarios.Add(usuario);
+                await db.SaveChangesAsync();
+
+                List<HyperLink> links = Links.GenerateLinks(httpContext, usuario.Id, prefixo);
+
+                var usuarioCommit = await db.Usuarios
+                    .Include(u => u.Perfil)
+                    .FirstOrDefaultAsync(u => u.Id == usuario.Id);
+
+                return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{usuario.Id}", new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
 
             }
         );
