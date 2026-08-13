@@ -9,7 +9,7 @@ public class UsuarioInputPostDtoValidator : AbstractValidator<UsuarioInputPostDt
     public UsuarioInputPostDtoValidator(CrudContext db)
     {
         _db = db;
-
+        
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("O E-Mail do usuário é obrigatório.")
             .EmailAddress().WithMessage("O E-Mail fornecido não é válido.")
@@ -28,11 +28,11 @@ public class UsuarioInputPostDtoValidator : AbstractValidator<UsuarioInputPostDt
             .WithMessage("A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número.");
 
         RuleFor(x => x.PerfilId)
-            .NotEmpty().WithMessage("O Identificador da Pessoa é obrigatório.")
+            .NotEmpty().WithMessage("O Perfil é obrigatório.")
             .MustAsync(async (perfilId, cancellation) =>
             {
                 return await _db.Perfis.AnyAsync(p => p.Id == perfilId, cancellation);
             })
-            .WithMessage(x => $"Perfil com ID {x.PerfilId} não encontrado.");
+            .WithMessage(x => $"Perfil não encontrado.");
     }    
 }

@@ -1,4 +1,4 @@
-public class UsuarioInputPutDto
+public class UsuarioInputPatchDto
 {
     public string Email { get; set; } = string.Empty;
     public string? NovaSenha { get; set; } = string.Empty;
@@ -7,6 +7,6 @@ public class UsuarioInputPutDto
 
     public string? Ativo {get; set;}
 
-    public UsuarioInputPutDto(){}
-    public UsuarioInputPutDto(UsuarioModel item) => ( Email, NovaSenha, PerfilId, Ativo) = ( item.Email, item.SenhaCrypt , item.PerfilId, item.Ativo);
+    public UsuarioInputPatchDto(){}
+    public UsuarioInputPatchDto(UsuarioModel item) => ( Email, NovaSenha, PerfilId, Ativo) = ( item.Email, item.SenhaCrypt , item.PerfilId, item.Ativo);
 }
