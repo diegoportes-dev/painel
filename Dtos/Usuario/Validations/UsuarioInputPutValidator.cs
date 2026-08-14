@@ -2,11 +2,11 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Crud.Data;
 
-public class UsuarioInputPutDtoValidator :  AbstractValidator<(Guid id, UsuarioInputPutDto input)>
+public class UsuarioInputPutValidator : AbstractValidator<(Guid id, UsuarioInputPutDto input)>
 {
     private readonly CrudContext _db;
     
-    public UsuarioInputPutDtoValidator(CrudContext db){
+    public UsuarioInputPutValidator(CrudContext db){
         _db = db;
 
         RuleFor(x => x.id)

@@ -16,7 +16,11 @@ public static class UsuarioRoute
         var route = app.MapGroup($"/{prefixo}");
 
         route.MapGet("", 
-            async Task<IResult> (int? page, int? pageSize, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (
+                int? page, 
+                int? pageSize, 
+                CrudContext db, 
+                HttpContext httpContext) =>
             {
                 var pageNumber = page is null or < 1 ? 1 : page.Value;
                 var requestedPageSize = pageSize is null or < 1 ? 10 : pageSize.Value;
@@ -69,8 +73,7 @@ public static class UsuarioRoute
         );
 
         route.MapPost("",
-            async Task<IResult> 
-            (
+            async Task<IResult> (
                 UsuarioInputPostDto input, 
                 CrudContext db, 
                 HttpContext httpContext, 
@@ -104,7 +107,10 @@ public static class UsuarioRoute
         );
 
         route.MapGet("/{id:guid}", 
-            async Task<IResult> (Guid id, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (
+                Guid id, 
+                CrudContext db, 
+                HttpContext httpContext) =>
             {
                 var usuario = await db.Usuarios
                     .Include(u => u.Perfil)
@@ -122,8 +128,7 @@ public static class UsuarioRoute
         ); 
 
         route.MapPut("/{id:guid}",
-            async Task<IResult> 
-            (
+            async Task<IResult>(
                 Guid id, 
                 UsuarioInputPutDto input, 
                 CrudContext db, 
@@ -177,7 +182,9 @@ public static class UsuarioRoute
         ); 
 
         route.MapDelete("/{id:guid}",
-            async Task<IResult> (Guid id, CrudContext db) =>
+            async Task<IResult> (
+                Guid id, 
+                CrudContext db) =>
             {
                 var usuario = await db.Usuarios
                     .FirstOrDefaultAsync(u => u.Id == id);
@@ -195,65 +202,53 @@ public static class UsuarioRoute
         );
 
         route.MapPatch("/{id:guid}",
-        async Task<IResult> (
-            Guid id, 
-            UsuarioInputPatchDto input, 
-            CrudContext db, 
-            HttpContext httpContext,
-            IValidator<(Guid id, UsuarioInputPatchDto input)> validator) =>
-        {    
-            var validationResult = await validator.ValidateAsync((id, input));
-        
-            if (!validationResult.IsValid)
-            {
-                // Trata o 404 do Usuário
-                if (validationResult.Errors.Any(e => e.ErrorCode == "NotFound"))
-                    return Results.NotFound(new { message = validationResult.Errors.First(e => e.ErrorCode == "NotFound").ErrorMessage });
-
-                // Trata o 404 do Perfil
-                if (validationResult.Errors.Any(e => e.ErrorCode == "PerfilNotFound"))
-                    return Results.NotFound(new { message = validationResult.Errors.First(e => e.ErrorCode == "PerfilNotFound").ErrorMessage });
-
-                // Retorna 400 para erros cadastrais normais (E-mail duplicado, formato de senha, etc)
-                return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = validationResult.ToDictionary() });
-            }
-
-           
-            var usuario = await db.Usuarios.FirstAsync(u => u.Id == id);
+            async Task<IResult> (
+                Guid id, 
+                UsuarioInputPatchDto input, 
+                CrudContext db, 
+                HttpContext httpContext,
+                IValidator<(Guid id, UsuarioInputPatchDto input)> validator) =>
+            {    
+                var validationResult = await validator.ValidateAsync((id, input));
             
-            if (!string.IsNullOrEmpty(input.Email))
-            {
-                usuario.Email = input.Email;
-            }
-
-            if (!string.IsNullOrEmpty(input.Ativo))
-            {
-                usuario.Ativo = input.Ativo;
-            }
-
-            if (input.PerfilId != Guid.Empty)
-            {
-                usuario.PerfilId = input.PerfilId;
-            }
-
-            if (!string.IsNullOrEmpty(input.NovaSenha))
-            {
-                if (!BCrypt.Net.BCrypt.Verify(input.NovaSenha, usuario.SenhaCrypt))
+                if (!validationResult.IsValid)
                 {
-                    usuario.SenhaCrypt = BCrypt.Net.BCrypt.HashPassword(input.NovaSenha);
+                    // Trata o 404 do Usuário
+                    if (validationResult.Errors.Any(e => e.ErrorCode == "NotFound"))
+                        return Results.NotFound(new { message = validationResult.Errors.First(e => e.ErrorCode == "NotFound").ErrorMessage });
+
+                    // Trata o 404 do Perfil
+                    if (validationResult.Errors.Any(e => e.ErrorCode == "PerfilNotFound"))
+                        return Results.NotFound(new { message = validationResult.Errors.First(e => e.ErrorCode == "PerfilNotFound").ErrorMessage });
+
+                    // Retorna 400 para erros cadastrais normais (E-mail duplicado, formato de senha, etc)
+                    return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = validationResult.ToDictionary() });
                 }
-            }
             
-            await db.SaveChangesAsync();
+                var usuario = await db.Usuarios.FirstAsync(u => u.Id == id);
+                
+                if (!string.IsNullOrEmpty(input.Email)) usuario.Email = input.Email; 
+                if (!string.IsNullOrEmpty(input.Ativo)) usuario.Ativo = input.Ativo;
+                if (input.PerfilId != Guid.Empty) usuario.PerfilId = input.PerfilId;
 
-            List<HyperLink> links = Links.GenerateLinks(httpContext, usuario.Id, prefixo);
+                if (!string.IsNullOrEmpty(input.NovaSenha))
+                {
+                    if (!BCrypt.Net.BCrypt.Verify(input.NovaSenha, usuario.SenhaCrypt))
+                    {
+                        usuario.SenhaCrypt = BCrypt.Net.BCrypt.HashPassword(input.NovaSenha);
+                    }
+                }
+                
+                await db.SaveChangesAsync();
 
-            var usuarioCommit = await db.Usuarios
-                .Include(u => u.Perfil)
-                .FirstOrDefaultAsync(u => u.Id == id);
+                List<HyperLink> links = Links.GenerateLinks(httpContext, usuario.Id, prefixo);
 
-            return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
-        }
+                var usuarioCommit = await db.Usuarios
+                    .Include(u => u.Perfil)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
+                return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
+            }
     );
 
         

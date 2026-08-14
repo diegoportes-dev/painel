@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Crud.Data;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
 
 public sealed record PerfilCollectionResponse(IReadOnlyList<PerfilOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record PerfilResourceResponse(PerfilOutputDto Data, IReadOnlyList<HyperLink> Links);
@@ -14,7 +15,11 @@ public static class PerfilRoute
         var route = app.MapGroup($"/{prefixo}");
 
         route.MapGet("", 
-            async Task<IResult> (int? page, int? pageSize, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (
+                int? page, 
+                int? pageSize, 
+                CrudContext db, 
+                HttpContext httpContext) =>
             {
                 var pageNumber = page is null or < 1 ? 1 : page.Value;
                 var requestedPageSize = pageSize is null or < 1 ? 10 : pageSize.Value;
@@ -65,52 +70,38 @@ public static class PerfilRoute
         );
 
         route.MapPost("", 
-            async Task<IResult> (PerfilInputPostDTO input, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (
+                PerfilInputPostDTO input, 
+                CrudContext db, 
+                HttpContext httpContext, 
+                IValidator<PerfilInputPostDTO> validator) => 
             {   
-                try
+
+                var validationResult = await validator.ValidateAsync(input);
+                if (!validationResult.IsValid)
                 {
-
-                        var errosValidacao = ValidateDataAnnotations.Validate(input);
-                        if (errosValidacao != null)
-                        {
-                            return errosValidacao; // Retorna HTTP 400 Bad Request com a lista de erros estruturada
-                        }
-
-                        var perfil = new PerfilModel(input);
-
-                        db.Perfis.Add(perfil);
-                        await db.SaveChangesAsync();
-
-                        List<HyperLink> links = Links.GenerateLinks(httpContext, perfil.Id, prefixo);
-
-                        return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{perfil.Id}", new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
+                    // Formata os erros em um dicionário amigável (Propriedade -> Mensagens de erro)
+                    var erros = validationResult.ToDictionary();
+                    return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = erros });
+                }
                 
-                } 
-                catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
-                {                       
-                    var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
+                var perfil = new PerfilModel(input);
 
-                    return TypedResults.BadRequest(new 
-                    { 
-                        message = "Erro ao criar o perfil. Verifique os dados enviados.",
-                        technicalDetails = detalheTecnico
-                    }); 
-                } 
-                catch (Exception ex)
-                {
-                    var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
-            
-                    return TypedResults.Problem(
-                        title: "Ocorreu um erro interno inesperado ao criar perfil.",
-                        detail: detalheTecnico, 
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }               
+                db.Perfis.Add(perfil);
+                await db.SaveChangesAsync();
+
+                List<HyperLink> links = Links.GenerateLinks(httpContext, perfil.Id, prefixo);
+
+                return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{perfil.Id}", new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
+                                              
             }
         );
 
         route.MapGet("/{id:guid}", 
-            async Task<IResult> (Guid id, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (
+                Guid id, 
+                CrudContext db, 
+                HttpContext httpContext) =>
             {
                 var perfil = await db.Perfis.FindAsync(id);
                 if (perfil is null)
@@ -125,57 +116,47 @@ public static class PerfilRoute
         );
 
         route.MapPut("/{id:guid}", 
-            async Task<IResult> (Guid id, PerfilInputPutDTO input, CrudContext db, HttpContext httpContext) =>
+            async Task<IResult> (
+                Guid id, 
+                PerfilInputPutDTO input, 
+                CrudContext db, 
+                HttpContext httpContext, 
+                IValidator<(Guid id, PerfilInputPutDTO input)>validator) =>
             {
-                try
+
+                var validationResult = await validator.ValidateAsync((id, input));
+                if (!validationResult.IsValid)
                 {
+                    var usuarioNaoEncontrado = validationResult.Errors
+                        .FirstOrDefault(e => e.ErrorCode == "NotFound");
 
-                        var errosValidacao = ValidateDataAnnotations.Validate(input);
-                        if (errosValidacao != null)
-                        {
-                            return errosValidacao; // Retorna HTTP 400 Bad Request com a lista de erros estruturada
-                        }
+                    if (usuarioNaoEncontrado is not null)
+                    {
+                        // Se o usuário não existe, retorna 404 com a mensagem do FluentValidation
+                        return Results.NotFound(new { message = usuarioNaoEncontrado.ErrorMessage });
+                    }
 
-                        var perfil = await db.Perfis.FindAsync(id);
-                        if (perfil is null)
-                        {
-                            return TypedResults.NotFound(new { message = $"Perfil com ID {id} não encontrado." });
-                        }
-
-                        perfil.UpdatePerfil(input);
-
-                        await db.SaveChangesAsync();
-
-                        List<HyperLink> links = Links.GenerateLinks(httpContext, perfil.Id, prefixo);
-
-                        return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
-                    
+                    // 2. Se caiu aqui, o usuário existe, mas há erros de dados (ex: e-mail em uso) -> Retorna 400
+                    var erros = validationResult.ToDictionary();
+                    return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = erros });
                 }
-                catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
-                {                       
-                    var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
 
-                    return TypedResults.BadRequest(new 
-                    { 
-                        message = "Erro ao criar o perfil. Verifique os dados enviados.",
-                        technicalDetails = detalheTecnico
-                    }); 
-                } 
-                catch (Exception ex)
-                {
-                    var detalheTecnico = ex.InnerException?.Message ?? ex.Message;
-            
-                    return TypedResults.Problem(
-                        title: "Ocorreu um erro interno inesperado ao atualizar perfil.",
-                        detail: detalheTecnico, 
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
+                var perfil = await db.Perfis.FindAsync(id);
+                perfil.UpdatePerfil(input);
+
+                await db.SaveChangesAsync();
+
+                List<HyperLink> links = Links.GenerateLinks(httpContext, perfil.Id, prefixo);
+
+                return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
+                   
             }
         );
 
         route.MapDelete("/{id:guid}", 
-            async Task<IResult> (Guid id, CrudContext db) =>
+            async Task<IResult> (
+                Guid id, 
+                CrudContext db) =>
             {
                 var perfil = await db.Perfis.FindAsync(id);
                 if (perfil is null)
@@ -191,35 +172,36 @@ public static class PerfilRoute
         );
 
         route.MapPatch("/{id:guid}", 
-            async Task<IResult> (Guid id, PerfilInputPutDTO input, CrudContext db, HttpContext httpContext) =>
-            {                
-                var perfil = await db.Perfis.FindAsync(id);
-                if (perfil is null)
+            async Task<IResult> (
+                Guid id, 
+                PerfilInputPatchDto input, 
+                CrudContext db, 
+                HttpContext httpContext, 
+                IValidator<(Guid id, PerfilInputPatchDto input)>validator) =>
+            {     
+
+                var validationResult = await validator.ValidateAsync((id, input));
+        
+                if (!validationResult.IsValid)
                 {
-                    return TypedResults.NotFound(new { message = $"Perfil com ID {id} não encontrado." });
+                    // Trata o 404 do Usuário
+                    if (validationResult.Errors.Any(e => e.ErrorCode == "NotFound"))
+                        return Results.NotFound(new { message = validationResult.Errors.First(e => e.ErrorCode == "NotFound").ErrorMessage });
+
+                    // Trata o 404 do Perfil
+                    if (validationResult.Errors.Any(e => e.ErrorCode == "PerfilNotFound"))
+                        return Results.NotFound(new { message = validationResult.Errors.First(e => e.ErrorCode == "PerfilNotFound").ErrorMessage });
+
+                    // Retorna 400 para erros cadastrais normais (E-mail duplicado, formato de senha, etc)
+                    return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = validationResult.ToDictionary() });
                 }
 
-                if (!string.IsNullOrEmpty(input.Nome))
-                {
-                    perfil.Nome = input.Nome;
-                }
+                var perfil = await db.Perfis.FindAsync(id);            
 
-                if (!string.IsNullOrEmpty(input.Descricao))
-                {
-                    perfil.Descricao = input.Descricao;
-                }
-
-                if (!string.IsNullOrEmpty(input.Ativo))
-                {
-                    perfil.Ativo = input.Ativo;
-                }
-
-                var validationResult = ValidateDataAnnotations.Validate( new PerfilInputPutDTO(perfil) );
-                if (validationResult is not null)
-                {
-                    return validationResult;
-                }
-
+                if (!string.IsNullOrEmpty(input.Nome)) perfil.Nome = input.Nome; 
+                if (!string.IsNullOrEmpty(input.Descricao)) perfil.Descricao = input.Descricao;
+                if (!string.IsNullOrEmpty(input.Ativo)) perfil.Ativo = input.Ativo.ToUpper();
+                
                 await db.SaveChangesAsync();
 
                 List<HyperLink>links = Links.GenerateLinks(httpContext, perfil.Id, prefixo);
