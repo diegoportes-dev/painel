@@ -67,7 +67,7 @@ public static class PerfilRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPost("", 
             async Task<IResult> (
@@ -95,7 +95,7 @@ public static class PerfilRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{perfil.Id}", new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
                                               
             }
-        );
+        ).RequireAuthorization();
 
         route.MapGet("/{id:guid}", 
             async Task<IResult> (
@@ -113,7 +113,7 @@ public static class PerfilRoute
                 
                 return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPut("/{id:guid}", 
             async Task<IResult> (
@@ -151,7 +151,7 @@ public static class PerfilRoute
                 return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
                    
             }
-        );
+        ).RequireAuthorization();
 
         route.MapDelete("/{id:guid}", 
             async Task<IResult> (
@@ -169,7 +169,7 @@ public static class PerfilRoute
 
                 return TypedResults.NoContent();
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPatch("/{id:guid}", 
             async Task<IResult> (
@@ -208,7 +208,7 @@ public static class PerfilRoute
 
                 return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
             }
-        );        
+        ).RequireAuthorization();        
     }
     
 }

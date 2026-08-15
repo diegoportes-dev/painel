@@ -10,6 +10,7 @@ obj/
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+Migrations/
 
 # --- Configurações de Ambiente Local ---
 appsettings.Development.json

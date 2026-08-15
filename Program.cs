@@ -59,18 +59,29 @@ builder.Services.AddTransient<IEmailService, MailKitEmailService>();
 //Validadores
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-//Adiciona serviços de EXCEPTIONS unificado
-builder.Services.AddProblemDetails();
-
 builder.Services.AddAuthorization();
 
 // 3. Configurar o OpenAPI para o Scalar
 builder.Services.AddOpenApi();
 
+//Adiciona serviços de EXCEPTIONS unificado
 builder.Services.AddProblemDetails();
+
 builder.Services.AddScoped<CrudContext>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5174") // Porta padrão do Vite
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

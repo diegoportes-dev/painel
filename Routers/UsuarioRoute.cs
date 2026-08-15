@@ -70,7 +70,7 @@ public static class UsuarioRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPost("",
             async Task<IResult> (
@@ -104,7 +104,7 @@ public static class UsuarioRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{usuario.Id}", new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
 
             }
-        );
+        ).RequireAuthorization();
 
         route.MapGet("/{id:guid}", 
             async Task<IResult> (
@@ -125,7 +125,7 @@ public static class UsuarioRoute
 
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuario), links));
             }
-        ); 
+        ).RequireAuthorization(); 
 
         route.MapPut("/{id:guid}",
             async Task<IResult>(
@@ -179,7 +179,7 @@ public static class UsuarioRoute
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
                  
             }   
-        ); 
+        ).RequireAuthorization(); 
 
         route.MapDelete("/{id:guid}",
             async Task<IResult> (
@@ -199,7 +199,7 @@ public static class UsuarioRoute
 
                 return Results.NoContent();
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPatch("/{id:guid}",
             async Task<IResult> (
@@ -249,7 +249,7 @@ public static class UsuarioRoute
 
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
             }
-    );
+    ).RequireAuthorization();
 
         
     }
