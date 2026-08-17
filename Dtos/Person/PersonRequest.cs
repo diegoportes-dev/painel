@@ -1,1 +1,0 @@
-public record PersonRequest(string name);

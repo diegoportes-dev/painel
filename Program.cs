@@ -131,8 +131,6 @@ app.UseAuthorization();
 
 // Suas rotas existentes
 app.MapLoginRoutes(chaveEmBytes);
-app.MapPersonRoutes();
-app.MapEnderecoRoutes();
 app.MapPerfilRoutes();
 app.MapUsuarioRoutes();
 app.MapTenantRoutes();
