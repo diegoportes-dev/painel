@@ -1,6 +1,4 @@
 
-using System.ComponentModel.DataAnnotations;
-
 public class PerfilOutputDto
 {
     public Guid? Id {get; set;}

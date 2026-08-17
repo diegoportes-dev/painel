@@ -67,13 +67,15 @@ builder.Services.AddOpenApi();
 //Adiciona serviços de EXCEPTIONS unificado
 builder.Services.AddProblemDetails();
 
+//Contexto de Banco
 builder.Services.AddScoped<CrudContext>();
 
+//Definições CORs
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5174") // Porta padrão do Vite
+        policy.WithOrigins("http://localhost:5173") // Porta padrão do Vite
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -133,6 +135,7 @@ app.MapPersonRoutes();
 app.MapEnderecoRoutes();
 app.MapPerfilRoutes();
 app.MapUsuarioRoutes();
+app.MapTenantRoutes();
 
 
 app.Run();

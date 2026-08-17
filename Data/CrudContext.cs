@@ -8,6 +8,7 @@ public class CrudContext() : DbContext
     public DbSet<EnderecoModel>Endereco{ get; set; } 
     public DbSet<UsuarioModel>Usuarios{ get; set; }
     public DbSet<PerfilModel>Perfis{ get; set; }
+    public DbSet<TenantModel>Tenants{  get; set;}
 
     // protected override void OnModelCreating(ModelBuilder modelBuilder)
     // {
