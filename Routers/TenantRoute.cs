@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using Crud.Data; // Ajuste para o namespace correto do seu CrudContext
+using Crud.Data; 
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 
-// Records de resposta padronizados seguindo o seu modelo do Perfil
+namespace Crud.Routers;
+
 public sealed record TenantCollectionResponse(IReadOnlyList<TenantOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record TenantResourceResponse(TenantOutputDto Data, IReadOnlyList<HyperLink> Links);
 
@@ -20,7 +21,7 @@ public static class TenantRoute
             async Task<IResult> (
                 int? page, 
                 int? pageSize, 
-                CrudContext db, // Injeta o banco do catálogo/central
+                CrudContext db, 
                 HttpContext httpContext) =>
             {
                 var pageNumber = page is null or < 1 ? 1 : page.Value;
@@ -69,9 +70,9 @@ public static class TenantRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        ).RequireAuthorization();
+        );
 
-        // 2. POST (Criação de Tenant com validação)
+        // 2. POST (Criação de Tenant com Geração Automática de Slug)
         route.MapPost("", 
             async Task<IResult> (
                 TenantInputPostDto input, 
@@ -85,8 +86,18 @@ public static class TenantRoute
                     var erros = validationResult.ToDictionary();
                     return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = erros });
                 }
+
+                // Geração e garantia de unicidade do Slug de forma automatizada
+                var slugBase = SlugHelper.GerarSlug(input.Nome);
+                var slugFinal = slugBase;
+                int contador = 1;
+
+                while (await db.Tenants.AnyAsync(t => t.Slug == slugFinal))
+                {
+                    slugFinal = $"{slugBase}_{contador}";
+                    contador++;
+                }
                 
-                // Instancia o modelo limpando caracteres do documento
                 var tenant = new TenantModel
                 {
                     Id = Guid.NewGuid(),
@@ -94,9 +105,12 @@ public static class TenantRoute
                     NomeSecundario = input.NomeSecundario,
                     Documento = new string(input.Documento.Where(char.IsDigit).ToArray()),
                     Tipo = input.Tipo,
-                    Slug = input.Slug.ToLower().Trim(),
-                    // Montagem dinâmica da String de Conexão isolada baseada no Slug
-                    ConnectionString = $"Server=seu_servidor;Database=db_tenant_{input.Slug.ToLower().Trim()};User Id=sa;Password=sua_senha;TrustServerCertificate=True;"
+                    Slug = slugFinal, // Definido automaticamente e em definitivo
+                    DatabaseName = $"db_{slugFinal}",
+                    
+                    // TODO: Substituir pela chamada do seu ICriptografiaService real futuramente
+                    DbUserEncrypted = $"encrypted_user_{slugFinal}",
+                    DbPasswordEncrypted = $"encrypted_pwd_{Guid.NewGuid().ToString("N").Substring(0, 10)}"
                 };
 
                 db.Tenants.Add(tenant);
@@ -107,7 +121,7 @@ public static class TenantRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{tenant.Id}", 
                     new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        ).RequireAuthorization();
+        );
 
         // 3. GET BY ID
         route.MapGet("/{id:guid}", 
@@ -126,9 +140,9 @@ public static class TenantRoute
                 
                 return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        ).RequireAuthorization();
+        );
 
-        // 4. PUT (Atualização completa)
+        // 4. PUT (Atualização cadastral sem alteração de infraestrutura)
         route.MapPut("/{id:guid}", 
             async Task<IResult> (
                 Guid id, 
@@ -154,13 +168,14 @@ public static class TenantRoute
 
                 var tenant = await db.Tenants.FindAsync(id);
                 
-                // Atualização dos campos do Tenant
+                // Atualização estritamente dos campos comerciais e cadastrais permitidos
                 tenant.Nome = input.Nome;
                 tenant.NomeSecundario = input.NomeSecundario;
                 tenant.Documento = new string(input.Documento.Where(char.IsDigit).ToArray());
                 tenant.Tipo = input.Tipo;
-                tenant.Slug = input.Slug.ToLower().Trim();
-                tenant.Ativo = input.Ativo; // Herdado de AuditoriaModel caso aplicável
+                tenant.Ativo = input.Ativo ?? tenant.Ativo; 
+
+                // ATENÇÃO: Slug, DatabaseName, Usuário e Senha permanecem totalmente protegidos e inalterados
 
                 await db.SaveChangesAsync();
 
@@ -168,7 +183,7 @@ public static class TenantRoute
 
                 return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        ).RequireAuthorization();
+        );
 
         // 5. DELETE
         route.MapDelete("/{id:guid}", 
@@ -187,6 +202,53 @@ public static class TenantRoute
 
                 return TypedResults.NoContent();
             }
-        ).RequireAuthorization();
+        );
+
+        route.MapPatch("/{id:guid}", 
+            async Task<IResult> (
+                Guid id, 
+                TenantInputPatchDto input, 
+                CrudContext db, 
+                HttpContext httpContext, 
+                IValidator<(Guid id, TenantInputPatchDto input)> validator) =>
+                {     
+                    var validationResult = await validator.ValidateAsync((id, input));
+
+                    if (!validationResult.IsValid)
+                    {
+                        var tenantNaoEncontrado = validationResult.Errors
+                            .FirstOrDefault(e => e.ErrorCode == "NotFound");
+
+                        if (tenantNaoEncontrado is not null)
+                        {
+                            return Results.NotFound(new { message = tenantNaoEncontrado.ErrorMessage });
+                        }
+
+                        var erros = validationResult.ToDictionary();
+                        return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = erros });
+                    }
+
+                    var tenant = await db.Tenants.FindAsync(id);
+                    
+                    // Aplica atualizações parciais de forma segura (Apenas se o campo foi enviado)
+                    if (input.Nome != null) tenant!.Nome = input.Nome;
+                    if (input.NomeSecundario != null) tenant!.NomeSecundario = input.NomeSecundario;
+                    if (input.Tipo != null) tenant!.Tipo = input.Tipo.Value;
+                    if (input.Ativo != null) tenant!.Ativo = input.Ativo;
+                    
+                    if (input.Documento != null) 
+                    {
+                        tenant!.Documento = new string(input.Documento.Where(char.IsDigit).ToArray());
+                    }
+
+                    // BLINDADO: Slug, DatabaseName, DbUserEncrypted e DbPasswordEncrypted nunca serão alterados aqui!
+
+                    await db.SaveChangesAsync();
+
+                    List<HyperLink> links = Links.GenerateLinks(httpContext, tenant!.Id, prefixo);
+
+                    return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
+                }
+            );
     }
 }

@@ -17,40 +17,6 @@ namespace crud.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
-            modelBuilder.Entity("EnderecoModel", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Bairro")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Cep")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Cidade")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Endereco")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Numero")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PersonId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Uf")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PersonId");
-
-                    b.ToTable("Endereco");
-                });
-
             modelBuilder.Entity("PerfilModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -83,20 +49,6 @@ namespace crud.Migrations
                     b.ToTable("Perfis");
                 });
 
-            modelBuilder.Entity("PersonModel", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("People");
-                });
-
             modelBuilder.Entity("TenantModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -106,13 +58,19 @@ namespace crud.Migrations
                     b.Property<string>("Ativo")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConnectionString")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("Created")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CreatedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DatabaseName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DbPasswordEncrypted")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DbUserEncrypted")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Documento")
@@ -138,7 +96,7 @@ namespace crud.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tenats");
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("UsuarioModel", b =>
@@ -182,17 +140,6 @@ namespace crud.Migrations
                     b.HasIndex("PerfilId");
 
                     b.ToTable("Usuarios");
-                });
-
-            modelBuilder.Entity("EnderecoModel", b =>
-                {
-                    b.HasOne("PersonModel", "Person")
-                        .WithMany()
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Person");
                 });
 
             modelBuilder.Entity("UsuarioModel", b =>

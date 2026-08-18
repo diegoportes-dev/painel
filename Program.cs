@@ -11,6 +11,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.OpenApi;
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
+using Crud.Routers;
 
 
 var builder = WebApplication.CreateBuilder(args);

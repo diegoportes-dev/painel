@@ -14,18 +14,6 @@ public class TenantInputPostValidator : AbstractValidator<TenantInputPostDto>
             .NotEmpty().WithMessage("O Nome/Razão Social é obrigatório.")
             .MaximumLength(150).WithMessage("O Nome não pode exceder 150 caracteres.");
 
-        RuleFor(x => x.Slug)
-            .NotEmpty().WithMessage("O Slug de identificação é obrigatório.")
-            .MaximumLength(50).WithMessage("O Slug não pode exceder 50 caracteres.")
-            .Matches(@"^[a-z0-Validation\d-]+$").WithMessage("O Slug deve conter apenas letras minúsculas, números e hifens.")
-            .MustAsync(async (slug, cancellation) =>
-            {
-                // Garante que nenhuma outra empresa use o mesmo endereço/slug no sistema central
-                var slugExiste = await _db.Tenants.AnyAsync(t => t.Slug == slug.ToLower().Trim(), cancellation);
-                return !slugExiste;
-            })
-            .WithMessage(x => $"O identificador '{x.Slug}' já está sendo utilizado por outra empresa.");
-
         RuleFor(x => x.Documento)
             .NotEmpty().WithMessage("O documento (CPF/CNPJ) é obrigatório.")
             .Must((dto, documento) => ValidarFormatoDocumento(documento, dto.Tipo))
