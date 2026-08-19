@@ -11,6 +11,7 @@ public class UsuarioModel : AuditoriaModel
     public DateTime? TokenCadastroExpiracao { get; set; }
     public Guid? TenantId { get; set; }
     public TenantModel? Tenant { get; set; }
+    public Boolean? Master {get; set;} = false;
 
     public UsuarioModel():base(){}
 

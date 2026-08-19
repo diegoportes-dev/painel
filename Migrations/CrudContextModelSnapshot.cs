@@ -117,6 +117,9 @@ namespace crud.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool?>("Master")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("PerfilId")
                         .HasColumnType("TEXT");
 

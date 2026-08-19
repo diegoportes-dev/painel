@@ -1,5 +1,6 @@
 public class SetupTenantWithTokenDto
 {
+    public string EmailCadastro {get;  set;} = string.Empty;
     public string TokenCadastro { get; set; } = string.Empty;
     public string Nome { get; set; } = string.Empty;
     public string? NomeSecundario { get; set; }

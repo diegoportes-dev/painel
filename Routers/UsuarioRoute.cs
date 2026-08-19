@@ -17,6 +17,64 @@ public static class UsuarioRoute
         string prefixo = "usuarios";
         var route = app.MapGroup($"/{prefixo}");
 
+        // route.MapGet("", 
+        //     async Task<IResult> (
+        //         int? page, 
+        //         int? pageSize, 
+        //         CrudContext db, 
+        //         HttpContext httpContext) =>
+        //     {
+        //         var pageNumber = page is null or < 1 ? 1 : page.Value;
+        //         var requestedPageSize = pageSize is null or < 1 ? 10 : pageSize.Value;
+
+        //         var totalItems = await db.Usuarios.CountAsync();
+        //         var totalPages = totalItems == 0
+        //             ? 0
+        //             : (int)Math.Ceiling(totalItems / (double)requestedPageSize);
+
+        //         var usuarios = await db.Usuarios
+        //             .Include(u => u.Perfil)
+        //             .Include(u => u.Tenant)
+        //             .OrderBy(u => u.Email)
+        //             .Skip((pageNumber - 1) * requestedPageSize)
+        //             .Take(requestedPageSize)
+        //             .Select(u => new UsuarioOutputDto(u))
+        //             .ToListAsync();
+
+        //         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+        //         var pageQuery = $"?page={pageNumber}&pageSize={requestedPageSize}";
+
+        //         var links = new List<HyperLink>
+        //         {
+        //             new HyperLink("self", $"{baseUrl}/{prefixo}{pageQuery}", "GET"),
+        //             new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"),
+        //             new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"),
+        //             new HyperLink("next", pageNumber < totalPages ? $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}" : null, "GET"),
+        //             new HyperLink("prev", pageNumber > 1 ? $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}" : null, "GET")
+        //         };
+        //         if (pageNumber > 1)
+        //         {
+        //             links.Add(new HyperLink("prev", $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
+        //         }
+
+        //         if (pageNumber < totalPages)
+        //         {
+        //             links.Add(new HyperLink("next", $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
+        //         }
+
+        //         if (totalPages > 0)
+        //         {
+        //             links.Add(new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"));
+        //             links.Add(new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"));
+        //         }
+
+        //         return TypedResults.Ok(new UsuarioCollectionResponse(
+        //             usuarios,
+        //             new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
+        //             links));
+        //     }
+        // ).RequireAuthorization();
+
         route.MapGet("", 
             async Task<IResult> (
                 int? page, 
@@ -27,13 +85,38 @@ public static class UsuarioRoute
                 var pageNumber = page is null or < 1 ? 1 : page.Value;
                 var requestedPageSize = pageSize is null or < 1 ? 10 : pageSize.Value;
 
-                var totalItems = await db.Usuarios.CountAsync();
+                // 1. Extrai o ID do Usuário operador logado da Claim do JWT
+                var logadoIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(logadoIdClaim) || !Guid.TryParse(logadoIdClaim, out var logadoUserId))
+                {
+                    return Results.Json(new { message = "Usuário operador não identificado ou token inválido." }, statusCode: 401);
+                }
+
+                // 2. Consulta rápida na base para descobrir o TenantId do operador atual
+                var operadorTenantId = await db.Usuarios
+                    .Where(u => u.Id == logadoUserId)
+                    .Select(u => new {u.TenantId, u.Master} )
+                    .FirstOrDefaultAsync();
+
+                // 3. Constrói a query base aplicando o isolamento lógico               
+                var queryBase = db.Usuarios.AsQueryable();
+                
+                if (operadorTenantId.TenantId.HasValue && operadorTenantId.Master == false)
+                {
+                    queryBase = queryBase.Where(u => u.TenantId == operadorTenantId.TenantId);
+                }
+
+                // 4. Executa a contagem total baseada na query filtrada da empresa
+                var totalItems = await queryBase.CountAsync();
                 var totalPages = totalItems == 0
                     ? 0
                     : (int)Math.Ceiling(totalItems / (double)requestedPageSize);
 
-                var usuarios = await db.Usuarios
+                // 5. Executa a busca paginada e projetada usando o mesmo filtro de isolamento
+                var usuarios = await queryBase
                     .Include(u => u.Perfil)
+                    .Include(u => u.Tenant)
                     .OrderBy(u => u.Email)
                     .Skip((pageNumber - 1) * requestedPageSize)
                     .Take(requestedPageSize)
@@ -43,14 +126,13 @@ public static class UsuarioRoute
                 var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
                 var pageQuery = $"?page={pageNumber}&pageSize={requestedPageSize}";
 
+                // 6. Geração limpa e corrigida dos links HATEOAS (Sem duplicidades ou nulos)
                 var links = new List<HyperLink>
                 {
                     new HyperLink("self", $"{baseUrl}/{prefixo}{pageQuery}", "GET"),
-                    new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"),
-                    new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"),
-                    new HyperLink("next", pageNumber < totalPages ? $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}" : null, "GET"),
-                    new HyperLink("prev", pageNumber > 1 ? $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}" : null, "GET")
+                    new HyperLink("collection", $"{baseUrl}/{prefixo}", "GET")
                 };
+
                 if (pageNumber > 1)
                 {
                     links.Add(new HyperLink("prev", $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
@@ -73,6 +155,7 @@ public static class UsuarioRoute
                     links));
             }
         ).RequireAuthorization();
+
 
         route.MapPost("",
             async Task<IResult> (
@@ -136,6 +219,7 @@ public static class UsuarioRoute
             {
                 var usuario = await db.Usuarios
                     .Include(u => u.Perfil)
+                    .Include(u => u.Tenant)
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (usuario is null)
@@ -196,6 +280,7 @@ public static class UsuarioRoute
 
                 var usuarioCommit = await db.Usuarios
                     .Include(u => u.Perfil)
+                    .Include(u => u.Tenant)
                     .FirstOrDefaultAsync(u => u.Id == usuario.Id);
 
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
@@ -267,6 +352,7 @@ public static class UsuarioRoute
 
                 var usuarioCommit = await db.Usuarios
                     .Include(u => u.Perfil)
+                    .Include(u => u.Tenant)
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));

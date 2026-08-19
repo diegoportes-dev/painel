@@ -1,9 +1,3 @@
-// public class PerfilModel : AuditoriaModel{
-//     public Guid Id {get; set;}
-//     public string Nome {get; set;} = string.Empty;
-//     public string Descricao {get;  set;} = string.Empty;  
-// }
-
 public class PerfilModel : AuditoriaModel
 {
     public Guid Id { get; set; }

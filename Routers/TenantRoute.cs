@@ -70,7 +70,7 @@ public static class TenantRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        );
+        ).RequireAuthorization();
 
         // 2. POST (Criação de Tenant com Geração Automática de Slug)
         route.MapPost("", 
@@ -121,7 +121,7 @@ public static class TenantRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{tenant.Id}", 
                     new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        );
+        ).RequireAuthorization();
 
         // 3. GET BY ID
         route.MapGet("/{id:guid}", 
@@ -140,7 +140,7 @@ public static class TenantRoute
                 
                 return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        );
+        ).RequireAuthorization();
 
         // 4. PUT (Atualização cadastral sem alteração de infraestrutura)
         route.MapPut("/{id:guid}", 
@@ -183,7 +183,7 @@ public static class TenantRoute
 
                 return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        );
+        ).RequireAuthorization();
 
         // 5. DELETE
         route.MapDelete("/{id:guid}", 
@@ -202,7 +202,7 @@ public static class TenantRoute
 
                 return TypedResults.NoContent();
             }
-        );
+        ).RequireAuthorization();
 
         route.MapPatch("/{id:guid}", 
             async Task<IResult> (
@@ -249,7 +249,7 @@ public static class TenantRoute
 
                     return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
                 }
-            );
+            ).RequireAuthorization();
 
         app.MapPost("/auth/setup-cadastro", 
             async (
@@ -258,7 +258,7 @@ public static class TenantRoute
             {
                 // 1. Valida o Token de Cadastro no Banco Central
                 var usuarioPreCadastrado = await dbCentral.Usuarios
-                    .FirstOrDefaultAsync(u => u.TokenCadastro == input.TokenCadastro);
+                    .FirstOrDefaultAsync(u => u.TokenCadastro == input.TokenCadastro && u.Email == input.EmailCadastro );
 
                 if (usuarioPreCadastrado is null)
                 {
