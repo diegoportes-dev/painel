@@ -123,6 +123,15 @@ namespace crud.Migrations
                     b.Property<string>("SenhaCrypt")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenCadastro")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("TokenCadastroExpiracao")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TokenReset")
                         .HasColumnType("TEXT");
 
@@ -139,6 +148,8 @@ namespace crud.Migrations
 
                     b.HasIndex("PerfilId");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("Usuarios");
                 });
 
@@ -150,7 +161,13 @@ namespace crud.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TenantModel", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId");
+
                     b.Navigation("Perfil");
+
+                    b.Navigation("Tenant");
                 });
 #pragma warning restore 612, 618
         }

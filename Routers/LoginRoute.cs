@@ -43,7 +43,7 @@ public static class LoginRoute
                     Subject = new ClaimsIdentity([
                         new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
                         new Claim(ClaimTypes.Name , usuario.Email),
-                        new Claim("tenant_id", ""),
+                        new Claim("TenantId", usuario.TenantId.ToString()!),
                         // new Claim(ClaimTypes.Role, usuario.Perfil?.Nome ?? "Usuario"),
                         // Usando parâmetros customizados (Criados por você)
                         new Claim("PerfilId", usuario.PerfilId.ToString()),

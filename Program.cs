@@ -68,8 +68,14 @@ builder.Services.AddOpenApi();
 //Adiciona serviços de EXCEPTIONS unificado
 builder.Services.AddProblemDetails();
 
-//Contexto de Banco
+// 1. Registra o Provedor de Conexão com ciclo de vida Scoped (por requisição)
+builder.Services.AddScoped<ITenantProvider, TenantProvider>();
+
+//2. Contexto de Banco
 builder.Services.AddScoped<CrudContext>();
+
+// 3. Registra o Banco Operacional (Dinâmico)
+builder.Services.AddDbContext<TenantDbContext>();
 
 //Definições CORs
 builder.Services.AddCors(options =>
@@ -136,5 +142,52 @@ app.MapPerfilRoutes();
 app.MapUsuarioRoutes();
 app.MapTenantRoutes();
 
+
+
+// using (var scope = app.Services.CreateScope())
+// {
+//     var db = scope.ServiceProvider.GetRequiredService<CrudContext>();
+    
+//     // ==========================================
+//     // AJUSTE: Limpa completamente a base antiga
+//     // ==========================================
+//     // Apaga o arquivo físico do SQLite se ele já existir
+//     db.Database.EnsureDeleted(); 
+
+//     // Cria o banco do zero aplicando a estrutura atualizada
+//     db.Database.EnsureCreated(); 
+
+//     // Verifica se a tabela de Perfis já tem dados, se não tiver, insere o primeiro
+//     if (!db.Perfis.Any())
+//     {        
+//         var perfilMaster = new PerfilModel 
+//         { 
+//             Id = Guid.NewGuid(), 
+//             Nome = "Administrador Geral", 
+//             Descricao = "Suporte do Sistema",
+//             Ativo = "S",
+//             Created = DateTime.UtcNow,
+//             CreatedBy = "Sistema"
+//         };
+//         db.Perfis.Add(perfilMaster);
+
+//         // Cria o primeiro usuário com o Token de Cadastro para você testar a sua tela inicial
+//         var usuarioMaster = new UsuarioModel
+//         {
+//             Id = Guid.NewGuid(),
+//             Email = "suporte@sistema.com",
+//             SenhaCrypt = "nao_definida_ainda",
+//             PerfilId = perfilMaster.Id,
+//             TokenCadastro = "TOKEN123", // Use este token na sua rota de setup-cadastro!
+//             TokenCadastroExpiracao = DateTime.UtcNow.AddDays(7),
+//             Ativo = "S", // Ajustado para "S" para manter o padrão do perfil
+//             Created = DateTime.UtcNow,
+//             CreatedBy = "Sistema"
+//         };
+//         db.Usuarios.Add(usuarioMaster);
+
+//         db.SaveChanges();
+//     }
+// }
 
 app.Run();

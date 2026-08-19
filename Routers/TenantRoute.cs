@@ -250,5 +250,87 @@ public static class TenantRoute
                     return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
                 }
             );
+
+        app.MapPost("/auth/setup-cadastro", 
+            async (
+                SetupTenantWithTokenDto input,
+                CrudContext dbCentral) =>
+            {
+                // 1. Valida o Token de Cadastro no Banco Central
+                var usuarioPreCadastrado = await dbCentral.Usuarios
+                    .FirstOrDefaultAsync(u => u.TokenCadastro == input.TokenCadastro);
+
+                if (usuarioPreCadastrado is null)
+                {
+                    return Results.BadRequest(new { message = "Token de cadastro inválido ou inexistente." });
+                }
+
+                if (usuarioPreCadastrado.TokenCadastroExpiracao.HasValue && 
+                    usuarioPreCadastrado.TokenCadastroExpiracao.Value < DateTime.UtcNow)
+                {
+                    return Results.BadRequest(new { message = "Este token de cadastro já expirou." });
+                }
+
+                // 2. Gera o Slug imutável do novo cliente
+                var slugBase = SlugHelper.GerarSlug(input.Nome);
+                var slugFinal = slugBase;
+                int contador = 1;
+
+                while (await dbCentral.Tenants.AnyAsync(t => t.Slug == slugFinal))
+                {
+                    slugFinal = $"{slugBase}_{contador}";
+                    contador++;
+                }
+
+                var nomeBancoIsolado = $"{slugFinal}.sqlite";
+
+                // 3. Registra as definições do Tenant no Banco Central
+                var novoTenant = new TenantModel
+                {
+                    Id = Guid.NewGuid(),
+                    Nome = input.Nome,
+                    NomeSecundario = input.NomeSecundario,
+                    Documento = new string(input.Documento.Where(char.IsDigit).ToArray()),
+                    Tipo = input.Tipo,
+                    Slug = slugFinal,
+                    DatabaseName = nomeBancoIsolado,
+                    DbUserEncrypted = $"encrypted_user_{slugFinal}",
+                    DbPasswordEncrypted = $"encrypted_pwd_{Guid.NewGuid().ToString("N").Substring(0, 10)}"
+                };
+
+                dbCentral.Tenants.Add(novoTenant);
+
+                // 4. Atualiza o Usuário no Banco Central (Altera senha e consome o Token)
+                usuarioPreCadastrado.TenantId = novoTenant.Id;
+                usuarioPreCadastrado.SenhaCrypt = BCrypt.Net.BCrypt.HashPassword(input.SenhaDefinitiva);
+                usuarioPreCadastrado.TokenCadastro = null;
+                usuarioPreCadastrado.TokenCadastroExpiracao = null;
+
+                await dbCentral.SaveChangesAsync();
+
+                // 5. Configura e cria o banco operacional específico deste cliente
+                var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
+                var connectionStringNovoTenant = $"Data Source={nomeBancoIsolado}";
+                optionsBuilder.UseSqlite(connectionStringNovoTenant);
+
+                // Criamos uma instância temporária do provedor para passar ao construtor
+                var providerMock = new TenantProvider();
+                providerMock.SetConnectionString(connectionStringNovoTenant);
+
+                using (var dbIsolado = new TenantDbContext(optionsBuilder.Options, providerMock))
+                {
+                    // Agora o MigrateAsync() vai ler com sucesso a estrutura e CRIAR as tabelas (inclusive Testes)
+                    // dentro do arquivo "slug_do_cliente.sqlite"
+                    await dbIsolado.Database.MigrateAsync();
+                }
+
+                return Results.Ok(new
+                {
+                    message = "Cadastro centralizado concluído e banco operacional provisionado com sucesso!",
+                    tenant = novoTenant.Slug,
+                    usuario = usuarioPreCadastrado.Email
+                });
+            });
+
     }
 }

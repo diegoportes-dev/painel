@@ -2,6 +2,8 @@ using Crud.Data;
 using Microsoft.EntityFrameworkCore;
 using BCryptNet = BCrypt.Net.BCrypt;
 using FluentValidation;
+using System.Security.Claims;
+
 
 public sealed record UsuarioCollectionResponse(IReadOnlyList<UsuarioOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record UsuarioResourceResponse(UsuarioOutputDto Data, IReadOnlyList<HyperLink> Links);
@@ -88,9 +90,29 @@ public static class UsuarioRoute
                     return Results.BadRequest(new { message = "Erros de validação encontrados.", errors = erros });
                 }
 
+                 // 2. Extrai o ID do Usuário Admin que está logado (NameIdentifier do JWT)
+                var adminIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(adminIdClaim) || !Guid.TryParse(adminIdClaim, out var adminId))
+                {
+                    return Results.Json(new { message = "Usuário operador não identificado ou token inválido." }, statusCode: 401);
+                }
+
+                // 3. Consulta direta na base central para descobrir o TenantId do Admin operador
+                var adminTenantId = await db.Usuarios
+                    .Where(u => u.Id == adminId)
+                    .Select(u => u.TenantId)
+                    .FirstOrDefaultAsync();
+
+                // Valida se o Admin realmente pertence a um Tenant ativo
+                if (adminTenantId == null || adminTenantId == Guid.Empty)
+                {
+                    return Results.Json(new { message = "O usuário operador não possui um Tenant associado." }, statusCode: 403);
+                }
+
                 input.Senha = BCrypt.Net.BCrypt.HashPassword(input.Senha);
 
-                var usuario = new UsuarioModel(input);
+                var usuario = new UsuarioModel(input, adminTenantId);
 
                 db.Usuarios.Add(usuario);
                 await db.SaveChangesAsync();

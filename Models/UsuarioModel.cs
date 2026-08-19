@@ -7,15 +7,20 @@ public class UsuarioModel : AuditoriaModel
     public PerfilModel Perfil { get; set; } = null!; 
     public string? TokenReset { get; set; }
     public DateTime? TokenResetExpiracao { get; set; }
+    public string? TokenCadastro { get; set;}
+    public DateTime? TokenCadastroExpiracao { get; set; }
+    public Guid? TenantId { get; set; }
+    public TenantModel? Tenant { get; set; }
 
     public UsuarioModel():base(){}
 
-    public UsuarioModel(UsuarioInputPostDto input):base()
+    public UsuarioModel(UsuarioInputPostDto input, Guid? tenantId = null):base()
     {
         Id = Guid.NewGuid();
         Email = input.Email;       
         SenhaCrypt = input.Senha;
         PerfilId = Guid.Parse(input.PerfilId.ToString());
+        TenantId = tenantId; 
     }
 
     public void UpdateUsuario(UsuarioInputPutDto input)
@@ -24,11 +29,6 @@ public class UsuarioModel : AuditoriaModel
         SenhaCrypt = input.NovaSenha;
         PerfilId = input.PerfilId; 
         this.Ativo = input.Ativo;
-
-        // if (!string.IsNullOrEmpty(input.NovaSenha))
-        // {
-        //     SenhaCrypt = input.NovaSenha;
-        // }
     }
 
 }
