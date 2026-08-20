@@ -300,6 +300,12 @@ public static class TenantRoute
 
                 dbCentral.Tenants.Add(novoTenant);
 
+                var perfilAssociado = await dbCentral.Perfis.FindAsync(usuarioPreCadastrado.PerfilId);
+                if (perfilAssociado != null)
+                {
+                    perfilAssociado.TenantId = novoTenant.Id;
+                }
+
                 // 4. Atualiza o Usuário no Banco Central (Altera senha e consome o Token)
                 usuarioPreCadastrado.TenantId = novoTenant.Id;
                 usuarioPreCadastrado.SenhaCrypt = BCrypt.Net.BCrypt.HashPassword(input.SenhaDefinitiva);

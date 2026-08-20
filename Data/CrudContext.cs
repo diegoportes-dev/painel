@@ -8,13 +8,29 @@ public class CrudContext() : DbContext
     public DbSet<PerfilModel>Perfis{ get; set; }
     public DbSet<TenantModel>Tenants{  get; set;}
 
-    // protected override void OnModelCreating(ModelBuilder modelBuilder)
-    // {
-    //     modelBuilder.Entity<UsuarioModel>().ToTable("Usuario");
-    //     modelBuilder.Entity<PerfilModel>().ToTable("Perfil");
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
 
-    //     base.OnModelCreating(modelBuilder);
-    // }
+        // Configura o relacionamento para bloquear a exclusão em cascata
+        modelBuilder.Entity<UsuarioModel>()
+            .HasOne(u => u.Perfil)
+            .WithMany()
+            .HasForeignKey(u => u.PerfilId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<UsuarioModel>()
+            .HasOne(u => u.Tenant)
+            .WithMany() 
+            .HasForeignKey(u => u.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PerfilModel>()
+            .HasOne(p => p.Tenant)
+            .WithMany() 
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

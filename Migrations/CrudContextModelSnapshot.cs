@@ -38,6 +38,9 @@ namespace crud.Migrations
                     b.Property<string>("Nome")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("Updated")
                         .HasColumnType("TEXT");
 
@@ -45,6 +48,8 @@ namespace crud.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Perfis");
                 });
@@ -156,17 +161,28 @@ namespace crud.Migrations
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("PerfilModel", b =>
+                {
+                    b.HasOne("TenantModel", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("UsuarioModel", b =>
                 {
                     b.HasOne("PerfilModel", "Perfil")
                         .WithMany()
                         .HasForeignKey("PerfilId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("TenantModel", "Tenant")
                         .WithMany()
-                        .HasForeignKey("TenantId");
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Perfil");
 

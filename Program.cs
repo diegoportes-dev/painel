@@ -77,6 +77,9 @@ builder.Services.AddScoped<CrudContext>();
 // 3. Registra o Banco Operacional (Dinâmico)
 builder.Services.AddDbContext<TenantDbContext>();
 
+// Obrigatório para o validador ler o token
+builder.Services.AddHttpContextAccessor(); 
+
 //Definições CORs
 builder.Services.AddCors(options =>
 {
@@ -220,13 +223,13 @@ app.MapTenantRoutes();
 //     }
 
 //     // 2. Garante a existência do Usuário de Suporte Inicial (TOKEN123)
-//     var existeUsuarioSuporte = await db.Usuarios.AnyAsync(u => u.Email == "suporte@sistema.com");
+//     var existeUsuarioSuporte = await db.Usuarios.AnyAsync(u => u.Email == "suporte3@sistema.com");
 //     if (!existeUsuarioSuporte)
 //     {
 //         var usuarioMaster = new UsuarioModel
 //         {
 //             Id = Guid.NewGuid(),
-//             Email = "suporte@sistema.com",
+//             Email = "suporte3@sistema.com",
 //             SenhaCrypt = "nao_definida_ainda",
 //             PerfilId = perfilMaster.Id,
 //             TokenCadastro = "TOKEN123", 
@@ -241,13 +244,13 @@ app.MapTenantRoutes();
 //     // =========================================================================
 //     // REGRA DE NEGÓCIO: Se o perfil já existe, inclui o OUTRO usuário Admin Geral
 //     // =========================================================================
-//     var existeAdminGeral = await db.Usuarios.AnyAsync(u => u.Email == "admingeral1@sistema.com");
+//     var existeAdminGeral = await db.Usuarios.AnyAsync(u => u.Email == "admingeral3@sistema.com");
 //     if (!existeAdminGeral)
 //     {
 //         var usuarioAdminGeral = new UsuarioModel
 //         {
 //             Id = Guid.NewGuid(),
-//             Email = "admingeral1@sistema.com",
+//             Email = "admingeral3@sistema.com",
 //             // Criptografia robusta para o login direto do operador master do catálogo
 //             SenhaCrypt = BCrypt.Net.BCrypt.HashPassword("AdminGeral123"), 
 //             PerfilId = perfilMaster.Id,
