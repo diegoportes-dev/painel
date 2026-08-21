@@ -244,13 +244,13 @@ app.MapTenantRoutes();
 //     // =========================================================================
 //     // REGRA DE NEGÓCIO: Se o perfil já existe, inclui o OUTRO usuário Admin Geral
 //     // =========================================================================
-//     var existeAdminGeral = await db.Usuarios.AnyAsync(u => u.Email == "admingeral3@sistema.com");
+//     var existeAdminGeral = await db.Usuarios.AnyAsync(u => u.Email == "admingeral5@sistema.com");
 //     if (!existeAdminGeral)
 //     {
 //         var usuarioAdminGeral = new UsuarioModel
 //         {
 //             Id = Guid.NewGuid(),
-//             Email = "admingeral3@sistema.com",
+//             Email = "admingeral5@sistema.com",
 //             // Criptografia robusta para o login direto do operador master do catálogo
 //             SenhaCrypt = BCrypt.Net.BCrypt.HashPassword("AdminGeral123"), 
 //             PerfilId = perfilMaster.Id,

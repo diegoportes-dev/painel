@@ -317,7 +317,13 @@ public static class TenantRoute
                 // 5. Configura e cria o banco operacional específico deste cliente
                 var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
                 var connectionStringNovoTenant = $"Data Source={nomeBancoIsolado}";
-                optionsBuilder.UseSqlite(connectionStringNovoTenant);
+                // optionsBuilder.UseSqlite(connectionStringNovoTenant);
+                
+                optionsBuilder.UseSqlite(connectionStringNovoTenant, x => 
+                    // Substitua "SeuProjetoAondeFicamAsMigrations" pelo nome real do projeto/assembly
+                    // Exemplo: x.MigrationsAssembly("MeuApp.Data") ou typeof(TenantDbContext).Assembly.FullName
+                    x.MigrationsAssembly(typeof(TenantDbContext).Assembly.FullName)
+                );
 
                 // Criamos uma instância temporária do provedor para passar ao construtor
                 var providerMock = new TenantProvider();

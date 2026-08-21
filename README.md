@@ -29,13 +29,16 @@ dotnet restore
 
 ### 3. Iniciar o Banco de Dados e Construir as Tabelas (Migrations)
 Para inicializar o banco de dados SQLite do zero e criar a estrutura das tabelas, execute os comandos do Entity Framework Core no terminal:
+Obs.: É necessário executar as migrations para ambos os contextos;
 
 ```bash
 # 1. Cria o histórico inicial da estrutura do banco
-dotnet ef migrations add InitialCreate
+dotnet ef migrations add InitialCreate --context CrudContext
+dotnet ef migrations add InitialCreate --context TenantDbContext
 
 # 2. Executa a migração, gerando o arquivo do banco e construindo as tabelas
-dotnet ef database update
+dotnet ef database update --context CrudContext
+dotnet ef database update --context TenantDbContext
 ```
 
 ### 4. Configurar as Variáveis de Ambiente (`appsettings.json`)
