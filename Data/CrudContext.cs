@@ -10,7 +10,11 @@ public class CrudContext() : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
         base.OnModelCreating(modelBuilder);
+
+        // Dentro do OnModelCreating, se quiser Guids mais eficientes em formato binário (opcional)
+        modelBuilder.Entity<TenantModel>().Property(t => t.Id).HasColumnType("char(36)");
 
         // Configura o relacionamento para bloquear a exclusão em cascata
         modelBuilder.Entity<UsuarioModel>()
@@ -32,17 +36,44 @@ public class CrudContext() : DbContext
             .OnDelete(DeleteBehavior.Restrict);
     }
 
+    // // SQLLite
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    // {
+    //     // optionsBuilder.UseSqlite(connectionString: "Data Source=crud.sqlite");
+
+    //     // Só usa o arquivo físico se o DbContext não tiver sido configurado por fora (via Injeção de Dependência)
+    //     if (!optionsBuilder.IsConfigured)
+    //     {
+    //         optionsBuilder.UseSqlite("Data Source=crud.sqlite");
+    //     }
+    //     base.OnConfiguring(optionsBuilder);
+    // }
+
+    // MySQL
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // optionsBuilder.UseSqlite(connectionString: "Data Source=crud.sqlite");
-
-        // Só usa o arquivo físico se o DbContext não tiver sido configurado por fora (via Injeção de Dependência)
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlite("Data Source=crud.sqlite");
+            // Leitura dinâmica do appsettings.json no terminal
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            var connectionStringMaster = configuration.GetConnectionString("CentralConnection");
+
+            // 1. Defina sua string de conexão do MySQL
+            string connectionString = "Server=localhost;Database=crud_central;Uid=root;Pwd=Teste123;";
+
+            // 2. Defina a versão do seu servidor MySQL ou MariaDB (Exemplo: Versão 8.0 do MySQL)
+            var serverVersion = new MySqlServerVersion(new Version(8, 0, 0));
+
+            // 3. Configure o provedor Pomelo
+            optionsBuilder.UseMySql(connectionString, serverVersion);
         }
         base.OnConfiguring(optionsBuilder);
     }
+
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

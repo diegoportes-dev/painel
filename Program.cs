@@ -195,78 +195,78 @@ app.MapTenantRoutes();
 // }
 
 
-// using (var scope = app.Services.CreateScope())
-// {
-//     var db = scope.ServiceProvider.GetRequiredService<CrudContext>();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CrudContext>();
     
-//     // =========================================================================
-//     // AJUSTE: Removido EnsureDeleted() para PRESERVAR todos os dados existentes
-//     // =========================================================================
-//     db.Database.EnsureCreated(); 
+    // =========================================================================
+    // AJUSTE: Removido EnsureDeleted() para PRESERVAR todos os dados existentes
+    // =========================================================================
+    db.Database.EnsureCreated(); 
 
-//     // 1. Garante a existência do Perfil Master (Se não houver, insere; se houver, preserva)
-//     var perfilMaster = await db.Perfis.FirstOrDefaultAsync(p => p.Nome == "Administrador Geral");
+    // 1. Garante a existência do Perfil Master (Se não houver, insere; se houver, preserva)
+    var perfilMaster = await db.Perfis.FirstOrDefaultAsync(p => p.Nome == "Administrador Geral" && p.TenantId == null);
     
-//     if (perfilMaster == null)
-//     {        
-//         perfilMaster = new PerfilModel 
-//         { 
-//             Id = Guid.NewGuid(), 
-//             Nome = "Administrador Geral", 
-//             Descricao = "Suporte e Administração Global do Sistema",
-//             Ativo = "S",
-//             Created = DateTime.UtcNow,
-//             CreatedBy = "Sistema"
-//         };
-//         db.Perfis.Add(perfilMaster);
-//         await db.SaveChangesAsync(); // Persiste para obter o ID definitivo
-//     }
+    if (perfilMaster == null)
+    {        
+        perfilMaster = new PerfilModel 
+        { 
+            Id = Guid.NewGuid(), 
+            Nome = "Administrador Geral", 
+            Descricao = "Suporte e Administração Global do Sistema",
+            Ativo = "S",
+            Created = DateTime.UtcNow,
+            CreatedBy = "Sistema"
+        };
+        db.Perfis.Add(perfilMaster);
+        await db.SaveChangesAsync(); // Persiste para obter o ID definitivo
+    }
 
-//     // 2. Garante a existência do Usuário de Suporte Inicial (TOKEN123)
-//     var existeUsuarioSuporte = await db.Usuarios.AnyAsync(u => u.Email == "suporte3@sistema.com");
-//     if (!existeUsuarioSuporte)
-//     {
-//         var usuarioMaster = new UsuarioModel
-//         {
-//             Id = Guid.NewGuid(),
-//             Email = "suporte3@sistema.com",
-//             SenhaCrypt = "nao_definida_ainda",
-//             PerfilId = perfilMaster.Id,
-//             TokenCadastro = "TOKEN123", 
-//             TokenCadastroExpiracao = DateTime.UtcNow.AddDays(7),
-//             Ativo = "S", 
-//             Created = DateTime.UtcNow,
-//             CreatedBy = "Sistema"
-//         };
-//         db.Usuarios.Add(usuarioMaster);
-//     }
+    // 2. Garante a existência do Usuário de Suporte Inicial (TOKEN123)
+    var existeUsuarioSuporte = await db.Usuarios.AnyAsync(u => u.Email == "suporte3@sistema.com");
+    if (!existeUsuarioSuporte)
+    {
+        var usuarioMaster = new UsuarioModel
+        {
+            Id = Guid.NewGuid(),
+            Email = "suporte3@sistema.com",
+            SenhaCrypt = "nao_definida_ainda",
+            PerfilId = perfilMaster.Id,
+            TokenCadastro = "TOKEN123", 
+            TokenCadastroExpiracao = DateTime.UtcNow.AddDays(7),
+            Ativo = "S", 
+            Created = DateTime.UtcNow,
+            CreatedBy = "Sistema"
+        };
+        db.Usuarios.Add(usuarioMaster);
+    }
 
-//     // =========================================================================
-//     // REGRA DE NEGÓCIO: Se o perfil já existe, inclui o OUTRO usuário Admin Geral
-//     // =========================================================================
-//     var existeAdminGeral = await db.Usuarios.AnyAsync(u => u.Email == "admingeral5@sistema.com");
-//     if (!existeAdminGeral)
-//     {
-//         var usuarioAdminGeral = new UsuarioModel
-//         {
-//             Id = Guid.NewGuid(),
-//             Email = "admingeral5@sistema.com",
-//             // Criptografia robusta para o login direto do operador master do catálogo
-//             SenhaCrypt = BCrypt.Net.BCrypt.HashPassword("AdminGeral123"), 
-//             PerfilId = perfilMaster.Id,
-//             TenantId = null, // Opera globalmente na base central (sem isolamento de tenant)
-//             TokenCadastro = "TOKEN123", // Use este token na sua rota de setup-cadastro!
-//             TokenCadastroExpiracao = DateTime.UtcNow.AddDays(7),           
-//             Ativo = "S",
-//             Created = DateTime.UtcNow,
-//             CreatedBy = "Sistema"
-//         };
-//         db.Usuarios.Add(usuarioAdminGeral);
-//     }
+    // =========================================================================
+    // REGRA DE NEGÓCIO: Se o perfil já existe, inclui o OUTRO usuário Admin Geral
+    // =========================================================================
+    var existeAdminGeral = await db.Usuarios.AnyAsync(u => u.Email == "admingeral5@sistema.com");
+    if (!existeAdminGeral)
+    {
+        var usuarioAdminGeral = new UsuarioModel
+        {
+            Id = Guid.NewGuid(),
+            Email = "admingeral5@sistema.com",
+            // Criptografia robusta para o login direto do operador master do catálogo
+            SenhaCrypt = BCrypt.Net.BCrypt.HashPassword("AdminGeral123"), 
+            PerfilId = perfilMaster.Id,
+            TenantId = null, // Opera globalmente na base central (sem isolamento de tenant)
+            TokenCadastro = "TOKEN123", // Use este token na sua rota de setup-cadastro!
+            TokenCadastroExpiracao = DateTime.UtcNow.AddDays(7),           
+            Ativo = "S",
+            Created = DateTime.UtcNow,
+            CreatedBy = "Sistema"
+        };
+        db.Usuarios.Add(usuarioAdminGeral);
+    }
 
-//     // Executa o salvamento apenas dos registros novos que foram adicionados incrementalmente
-//     await db.SaveChangesAsync();
-// }
+    // Executa o salvamento apenas dos registros novos que foram adicionados incrementalmente
+    await db.SaveChangesAsync();
+}
 
 
 app.Run();

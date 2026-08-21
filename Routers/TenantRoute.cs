@@ -3,6 +3,7 @@ using System.Reflection;
 using Crud.Data; 
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
+using MySqlConnector; 
 
 namespace Crud.Routers;
 
@@ -251,7 +252,8 @@ public static class TenantRoute
                 }
             ).RequireAuthorization();
 
-        app.MapPost("/auth/setup-cadastro", 
+        //SQLLite
+        app.MapPost("/auth/setup-cadastro-sqlite", 
             async (
                 SetupTenantWithTokenDto input,
                 CrudContext dbCentral) =>
@@ -343,6 +345,124 @@ public static class TenantRoute
                     usuario = usuarioPreCadastrado.Email
                 });
             });
+
+
+        // MuSQL
+        app.MapPost("/auth/setup-cadastro", 
+            async (
+                SetupTenantWithTokenDto input,
+                CrudContext dbCentral) =>
+            {
+                // 1. Valida o Token de Cadastro no Banco Central
+                var usuarioPreCadastrado = await dbCentral.Usuarios
+                    .FirstOrDefaultAsync(u => u.TokenCadastro == input.TokenCadastro && u.Email == input.EmailCadastro);
+
+                if (usuarioPreCadastrado is null)
+                {
+                    return Results.BadRequest(new { message = "Token de cadastro inválido ou inexistente." });
+                }
+
+                if (usuarioPreCadastrado.TokenCadastroExpiracao.HasValue && 
+                    usuarioPreCadastrado.TokenCadastroExpiracao.Value < DateTime.UtcNow)
+                {
+                    return Results.BadRequest(new { message = "Este token de cadastro já expirou." });
+                }
+
+                // 2. Gera o Slug imutável do novo cliente
+                var slugBase = SlugHelper.GerarSlug(input.Nome);
+                var slugFinal = slugBase;
+                int contador = 1;
+
+                while (await dbCentral.Tenants.AnyAsync(t => t.Slug == slugFinal))
+                {
+                    slugFinal = $"{slugBase}_{contador}";
+                    contador++;
+                }
+
+                // ALTERAÇÃO: Nome de schema MySQL válido (ajustado para evitar caracteres inválidos)
+                var nomeBancoIsolado = $"tenant_{slugFinal.Replace("-", "_")}";
+
+                // Configuração de credenciais (Em produção, o ideal é ler os dados master do appsettings.json)
+                string servidorMysql = "localhost";
+                string usuarioMaster = "root";
+                string senhaMaster = "Teste123";
+
+                // 3. Registra as definições do Tenant no Banco Central
+                var novoTenant = new TenantModel
+                {
+                    Id = Guid.NewGuid(),
+                    Nome = input.Nome,
+                    NomeSecundario = input.NomeSecundario,
+                    Documento = new string(input.Documento.Where(char.IsDigit).ToArray()),
+                    Tipo = input.Tipo,
+                    Slug = slugFinal,
+                    DatabaseName = nomeBancoIsolado,
+                    // Armazena as credenciais que o middleware usará para se conectar a este banco posteriormente
+                    DbUserEncrypted = usuarioMaster, 
+                    DbPasswordEncrypted = senhaMaster 
+                };
+
+                dbCentral.Tenants.Add(novoTenant);
+
+                var perfilAssociado = await dbCentral.Perfis.FindAsync(usuarioPreCadastrado.PerfilId);
+                if (perfilAssociado != null)
+                {
+                    perfilAssociado.TenantId = novoTenant.Id;
+                }
+
+                // 4. Atualiza o Usuário no Banco Central (Altera senha e consome o Token)
+                usuarioPreCadastrado.TenantId = novoTenant.Id;
+                usuarioPreCadastrado.SenhaCrypt = BCrypt.Net.BCrypt.HashPassword(input.SenhaDefinitiva);
+                usuarioPreCadastrado.TokenCadastro = null;
+                usuarioPreCadastrado.TokenCadastroExpiracao = null;
+
+                await dbCentral.SaveChangesAsync();
+
+                // 5. Configura e cria o banco operacional específico deste cliente no MySQL
+                
+                // A. Define as strings de conexão necessárias
+                string connectionStringMaster = $"Server={servidorMysql};Uid={usuarioMaster};Pwd={senhaMaster};";
+                string connectionStringNovoTenant = $"Server={servidorMysql};Database={nomeBancoIsolado};Uid={usuarioMaster};Pwd={senhaMaster};";
+
+                // B. Abre conexão direta no servidor MySQL para criar o banco de dados físico (Schema)
+                using (var masterConnection = new MySqlConnection(connectionStringMaster))
+                {
+                    await masterConnection.OpenAsync();
+                    using (var command = masterConnection.CreateCommand())
+                    {
+                        // Cria a database isolada com suporte correto a caracteres especiais e emojis
+                        command.CommandText = $"CREATE DATABASE IF NOT EXISTS `{nomeBancoIsolado}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+
+                // C. Configura o DbContextOptionsBuilder apontando para o novo banco criado
+                var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
+                var serverVersion = new MySqlServerVersion(new Version(8, 0, 0)); // Ajuste de acordo com a sua versão do MySQL
+
+                optionsBuilder.UseMySql(connectionStringNovoTenant, serverVersion, x => 
+                    // Injeta o assembly correto para que as migrações operacionais sejam localizadas
+                    x.MigrationsAssembly(typeof(TenantDbContext).Assembly.FullName)
+                );
+
+                // D. Instancia temporariamente o provedor dinâmico de Tenant para passar no construtor
+                var providerMock = new TenantProvider();
+                providerMock.SetConnectionString(connectionStringNovoTenant);
+
+                // E. Executa o MigrateAsync() criando todas as tabelas (inclusive Testes) na nova database MySQL
+                using (var dbIsolado = new TenantDbContext(optionsBuilder.Options, providerMock))
+                {
+                    await dbIsolado.Database.MigrateAsync();
+                }
+
+                return Results.Ok(new
+                {
+                    message = "Cadastro centralizado concluído e banco operacional provisionado com sucesso!",
+                    tenant = novoTenant.Slug,
+                    usuario = usuarioPreCadastrado.Email
+                });
+            });
+
 
     }
 }

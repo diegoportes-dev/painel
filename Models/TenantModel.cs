@@ -1,4 +1,4 @@
-using Microsoft.Build.Framework;
+// using Microsoft.Build.Framework;
 
 public enum TipoTenant
 {
