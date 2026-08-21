@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Crud.Data;
 
@@ -60,10 +61,7 @@ public class CrudContext() : DbContext
                 .AddJsonFile("appsettings.json")
                 .Build();
 
-            var connectionStringMaster = configuration.GetConnectionString("CentralConnection");
-
-            // 1. Defina sua string de conexão do MySQL
-            string connectionString = "Server=localhost;Database=crud_central;Uid=root;Pwd=Teste123;";
+            string connectionString = configuration.GetConnectionString("CentralConnection");
 
             // 2. Defina a versão do seu servidor MySQL ou MariaDB (Exemplo: Versão 8.0 do MySQL)
             var serverVersion = new MySqlServerVersion(new Version(8, 0, 0));

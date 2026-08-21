@@ -351,7 +351,8 @@ public static class TenantRoute
         app.MapPost("/auth/setup-cadastro", 
             async (
                 SetupTenantWithTokenDto input,
-                CrudContext dbCentral) =>
+                CrudContext dbCentral,
+                IConfiguration configuration) =>
             {
                 // 1. Valida o Token de Cadastro no Banco Central
                 var usuarioPreCadastrado = await dbCentral.Usuarios
@@ -382,10 +383,10 @@ public static class TenantRoute
                 // ALTERAÇÃO: Nome de schema MySQL válido (ajustado para evitar caracteres inválidos)
                 var nomeBancoIsolado = $"tenant_{slugFinal.Replace("-", "_")}";
 
-                // Configuração de credenciais (Em produção, o ideal é ler os dados master do appsettings.json)
-                string servidorMysql = "localhost";
-                string usuarioMaster = "root";
-                string senhaMaster = "Teste123";
+                // LEITURA DO APPSETTINGS: Substitui os valores fixos (Hardcoded)
+                string servidorMysql = configuration["DatabaseConfig:ServidorMaster"] ?? "localhost";
+                string usuarioMaster = configuration["DatabaseConfig:UsuarioMaster"] ?? "root";
+                string senhaMaster = configuration["DatabaseConfig:SenhaMaster"] ?? "";
 
                 // 3. Registra as definições do Tenant no Banco Central
                 var novoTenant = new TenantModel
