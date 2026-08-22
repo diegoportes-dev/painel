@@ -384,9 +384,13 @@ public static class TenantRoute
                 var nomeBancoIsolado = $"tenant_{slugFinal.Replace("-", "_")}";
 
                 // LEITURA DO APPSETTINGS: Substitui os valores fixos (Hardcoded)
-                string servidorMysql = configuration["DatabaseConfig:ServidorMaster"] ?? "localhost";
+                string servidorMysqlMaster = configuration["DatabaseConfig:ServidorMaster"] ?? "localhost";
                 string usuarioMaster = configuration["DatabaseConfig:UsuarioMaster"] ?? "root";
                 string senhaMaster = configuration["DatabaseConfig:SenhaMaster"] ?? "";
+
+                string servidorMysqlTenant = configuration["DatabaseConfig:ServidorTenant"] ?? "localhost";
+                string usuarioTenant = configuration["DatabaseConfig:UsuarioTenant"] ?? "root";
+                string senhaTenant = configuration["DatabaseConfig:SenhaTenant"] ?? "";
 
                 // 3. Registra as definições do Tenant no Banco Central
                 var novoTenant = new TenantModel
@@ -399,8 +403,8 @@ public static class TenantRoute
                     Slug = slugFinal,
                     DatabaseName = nomeBancoIsolado,
                     // Armazena as credenciais que o middleware usará para se conectar a este banco posteriormente
-                    DbUserEncrypted = usuarioMaster, 
-                    DbPasswordEncrypted = senhaMaster 
+                    DbUserEncrypted = usuarioTenant, 
+                    DbPasswordEncrypted = senhaTenant 
                 };
 
                 dbCentral.Tenants.Add(novoTenant);
@@ -422,8 +426,8 @@ public static class TenantRoute
                 // 5. Configura e cria o banco operacional específico deste cliente no MySQL
                 
                 // A. Define as strings de conexão necessárias
-                string connectionStringMaster = $"Server={servidorMysql};Uid={usuarioMaster};Pwd={senhaMaster};";
-                string connectionStringNovoTenant = $"Server={servidorMysql};Database={nomeBancoIsolado};Uid={usuarioMaster};Pwd={senhaMaster};";
+                string connectionStringMaster = $"Server={servidorMysqlMaster};Uid={usuarioMaster};Pwd={senhaMaster};";
+                string connectionStringNovoTenant = $"Server={servidorMysqlTenant};Database={nomeBancoIsolado};Uid={usuarioTenant};Pwd={senhaTenant};";
 
                 // B. Abre conexão direta no servidor MySQL para criar o banco de dados físico (Schema)
                 using (var masterConnection = new MySqlConnection(connectionStringMaster))

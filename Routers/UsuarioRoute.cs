@@ -4,7 +4,6 @@ using BCryptNet = BCrypt.Net.BCrypt;
 using FluentValidation;
 using System.Security.Claims;
 
-
 public sealed record UsuarioCollectionResponse(IReadOnlyList<UsuarioOutputDto> Data, PaginationMetadata Pagination, IReadOnlyList<HyperLink> Links);
 public sealed record UsuarioResourceResponse(UsuarioOutputDto Data, IReadOnlyList<HyperLink> Links);
 
@@ -16,64 +15,6 @@ public static class UsuarioRoute
     {
         string prefixo = "usuarios";
         var route = app.MapGroup($"/{prefixo}");
-
-        // route.MapGet("", 
-        //     async Task<IResult> (
-        //         int? page, 
-        //         int? pageSize, 
-        //         CrudContext db, 
-        //         HttpContext httpContext) =>
-        //     {
-        //         var pageNumber = page is null or < 1 ? 1 : page.Value;
-        //         var requestedPageSize = pageSize is null or < 1 ? 10 : pageSize.Value;
-
-        //         var totalItems = await db.Usuarios.CountAsync();
-        //         var totalPages = totalItems == 0
-        //             ? 0
-        //             : (int)Math.Ceiling(totalItems / (double)requestedPageSize);
-
-        //         var usuarios = await db.Usuarios
-        //             .Include(u => u.Perfil)
-        //             .Include(u => u.Tenant)
-        //             .OrderBy(u => u.Email)
-        //             .Skip((pageNumber - 1) * requestedPageSize)
-        //             .Take(requestedPageSize)
-        //             .Select(u => new UsuarioOutputDto(u))
-        //             .ToListAsync();
-
-        //         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-        //         var pageQuery = $"?page={pageNumber}&pageSize={requestedPageSize}";
-
-        //         var links = new List<HyperLink>
-        //         {
-        //             new HyperLink("self", $"{baseUrl}/{prefixo}{pageQuery}", "GET"),
-        //             new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"),
-        //             new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"),
-        //             new HyperLink("next", pageNumber < totalPages ? $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}" : null, "GET"),
-        //             new HyperLink("prev", pageNumber > 1 ? $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}" : null, "GET")
-        //         };
-        //         if (pageNumber > 1)
-        //         {
-        //             links.Add(new HyperLink("prev", $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
-        //         }
-
-        //         if (pageNumber < totalPages)
-        //         {
-        //             links.Add(new HyperLink("next", $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
-        //         }
-
-        //         if (totalPages > 0)
-        //         {
-        //             links.Add(new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"));
-        //             links.Add(new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"));
-        //         }
-
-        //         return TypedResults.Ok(new UsuarioCollectionResponse(
-        //             usuarios,
-        //             new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
-        //             links));
-        //     }
-        // ).RequireAuthorization();
 
         route.MapGet("", 
             async Task<IResult> (
@@ -174,16 +115,16 @@ public static class UsuarioRoute
                 }
 
                  // 2. Extrai o ID do Usuário Admin que está logado (NameIdentifier do JWT)
-                var adminIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 
-                if (string.IsNullOrEmpty(adminIdClaim) || !Guid.TryParse(adminIdClaim, out var adminId))
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
                 {
                     return Results.Json(new { message = "Usuário operador não identificado ou token inválido." }, statusCode: 401);
                 }
 
                 // 3. Consulta direta na base central para descobrir o TenantId do Admin operador
                 var adminTenantId = await db.Usuarios
-                    .Where(u => u.Id == adminId)
+                    .Where(u => u.Id == userId)
                     .Select(u => u.TenantId)
                     .FirstOrDefaultAsync();
 

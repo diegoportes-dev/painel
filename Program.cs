@@ -44,7 +44,8 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = false,   // Pode ativar e definir o emissor se desejar
         ValidateAudience = false, // Pode ativar e definir o público alvo se desejar
         ValidateLifetime = true,   // Garante que tokens expirados serão rejeitados
-        ClockSkew = TimeSpan.Zero  // Remove o tempo de tolerância padrão de 5 minutos
+        ClockSkew = TimeSpan.Zero,  // Remove o tempo de tolerância padrão de 5 minutos
+        RoleClaimType = "PerfilId"
     };
 });
 

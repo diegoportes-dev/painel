@@ -15,61 +15,6 @@ public static class PerfilRoute
         string prefixo = "perfis";
         var route = app.MapGroup($"/{prefixo}");
         
-        // route.MapGet("", 
-        //     async Task<IResult> (
-        //         int? page, 
-        //         int? pageSize, 
-        //         CrudContext db, 
-        //         HttpContext httpContext) =>
-        //     {
-        //         var pageNumber = page is null or < 1 ? 1 : page.Value;
-        //         var requestedPageSize = pageSize is null or < 1 ? 10 : pageSize.Value;
-
-        //         var totalItems = await db.Perfis.CountAsync();
-        //         var totalPages = totalItems == 0
-        //             ? 0
-        //             : (int)Math.Ceiling(totalItems / (double)requestedPageSize);
-
-        //         var perfis = await db.Perfis
-        //             .OrderBy(p => p.Nome)
-        //             .Skip((pageNumber - 1) * requestedPageSize)
-        //             .Take(requestedPageSize)
-        //             .Select(p => new PerfilOutputDto(p))
-        //             .ToListAsync();
-
-        //         var baseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
-        //         var pageQuery = $"?page={pageNumber}&pageSize={requestedPageSize}";
-
-        //         var links = new List<HyperLink>
-        //         {
-        //             new("self", $"{baseUrl}/{prefixo}{pageQuery}", "GET"),
-        //             new("collection", $"{baseUrl}/{prefixo}", "GET"),
-        //             new("create", $"{baseUrl}/{prefixo}", "POST")
-        //         };
-
-        //         if (pageNumber > 1)
-        //         {
-        //             links.Add(new HyperLink("prev", $"{baseUrl}/{prefixo}?page={pageNumber - 1}&pageSize={requestedPageSize}", "GET"));
-        //         }
-
-        //         if (pageNumber < totalPages)
-        //         {
-        //             links.Add(new HyperLink("next", $"{baseUrl}/{prefixo}?page={pageNumber + 1}&pageSize={requestedPageSize}", "GET"));
-        //         }
-
-        //         if (totalPages > 0)
-        //         {
-        //             links.Add(new HyperLink("first", $"{baseUrl}/{prefixo}?page=1&pageSize={requestedPageSize}", "GET"));
-        //             links.Add(new HyperLink("last", $"{baseUrl}/{prefixo}?page={totalPages}&pageSize={requestedPageSize}", "GET"));
-        //         }
-
-        //         return TypedResults.Ok(new PerfilCollectionResponse(
-        //             perfis,
-        //             new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
-        //             links));
-        //     }
-        // ).RequireAuthorization();
-
         route.MapGet("", 
             async Task<IResult> (
                 int? page, 
