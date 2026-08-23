@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.OpenApi;
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 using Crud.Routers;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +49,45 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero,  // Remove o tempo de tolerância padrão de 5 minutos
         RoleClaimType = "PerfilId"
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        // Token ausente, inválido ou expirado (Retorna 401 unificado)
+        OnChallenge = async context =>
+        {
+            context.HandleResponse(); // Evita a resposta vazia/padrão do ASP.NET
+
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            var resposta = new 
+            { 
+                statusCode = 401,
+                message = "Acesso negado. Token de autenticação ausente, expirado ou inválido." 
+            };
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(resposta));
+        },
+
+        // Token válido, mas o PerfilId/Role barrou o acesso (Retorna 403 unificado)
+        OnForbidden = async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+
+            var resposta = new 
+            { 
+                statusCode = 403,
+                message = "Você não possui a permissão de perfil necessária para acessar este recurso." 
+            };
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(resposta));
+        }
+    };
 });
+
+// Registra o Handler no sistema de Injeção de Dependência
+builder.Services.AddScoped<IAuthorizationHandler, RequisitoAcessoHandler>();
 
 // Mapeia a seção do appsettings para a classe C#
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -64,7 +104,11 @@ builder.Services.AddTransient<IEmailService, MailKitEmailService>();
 //Validadores
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ValidarRequisitosPerfil", policy =>
+        policy.Requirements.Add(new RequisitoAcesso()));
+});
 
 // 3. Configurar o OpenAPI para o Scalar
 builder.Services.AddOpenApi();

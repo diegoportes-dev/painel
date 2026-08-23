@@ -19,6 +19,7 @@ public class TenantModel : AuditoriaModel
     public string DatabaseName { get; set; } = string.Empty;
     public string DbUserEncrypted { get; set; } = string.Empty;  // Criptografado com AES-256
     public string DbPasswordEncrypted { get; set; } = string.Empty;  // Criptografado com AES-256
+    // public bool PlanoPermiteCriarUsuario { get; internal set; }
 
     public TenantModel() : base() { }
 

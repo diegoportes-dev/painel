@@ -6,6 +6,7 @@ using System.Security.Claims;
 using BCryptNet = BCrypt.Net.BCrypt;
 using Microsoft.Extensions.Options;
 using FluentValidation;
+using System.Text.Json;
 
 public static class LoginRoute
 {

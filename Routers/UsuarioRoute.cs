@@ -95,7 +95,7 @@ public static class UsuarioRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
 
         route.MapPost("",

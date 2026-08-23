@@ -22,6 +22,47 @@ namespace crud.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("NivelAcessoModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Ativo")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("PefilId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("RotaId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PefilId");
+
+                    b.HasIndex("RotaId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("NiveisAcessos");
+                });
+
             modelBuilder.Entity("PerfilModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -57,6 +98,41 @@ namespace crud.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("Perfis");
+                });
+
+            modelBuilder.Entity("RotaModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Ativo")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Menu")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Rota")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Rotas");
                 });
 
             modelBuilder.Entity("TenantModel", b =>
@@ -164,6 +240,32 @@ namespace crud.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("Usuarios");
+                });
+
+            modelBuilder.Entity("NivelAcessoModel", b =>
+                {
+                    b.HasOne("PerfilModel", "Perfil")
+                        .WithMany()
+                        .HasForeignKey("PefilId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RotaModel", "Rota")
+                        .WithMany()
+                        .HasForeignKey("RotaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TenantModel", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Perfil");
+
+                    b.Navigation("Rota");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("PerfilModel", b =>
