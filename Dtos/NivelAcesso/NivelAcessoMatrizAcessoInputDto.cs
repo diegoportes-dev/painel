@@ -1,0 +1,1 @@
+public sealed record NivelAcessoMatrizAcessoInputDto(Guid PerfilId, List<Guid> RotaIds);

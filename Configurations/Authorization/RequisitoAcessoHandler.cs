@@ -7,14 +7,34 @@ using System.Security.Claims;
 public class RequisitoAcessoHandler : AuthorizationHandler<RequisitoAcesso>
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public RequisitoAcessoHandler(IServiceProvider serviceProvider)
+    public RequisitoAcessoHandler(IServiceProvider serviceProvider, IHttpContextAccessor httpContextAccessor)
     {
         _serviceProvider = serviceProvider;
+         _httpContextAccessor = httpContextAccessor;
     }
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, RequisitoAcesso requirement)
     {
+        // Obtém o HttpContext atual
+        var httpContext = _httpContextAccessor.HttpContext;
+        
+        if (httpContext != null)
+        {
+            // 1. Obtém o Endpoint metadata completo (onde você pode ler a rota, atributos como [Authorize], etc)
+            var endpoint = httpContext.GetEndpoint();
+            
+            // 2. Obtém a Rota em formato de string (Ex: "/api/usuarios/criar")
+            var rotaSolicitada = httpContext.Request.Path.Value;
+            
+            // 3. Obtém o Método HTTP (Ex: "POST", "GET")
+            var metodoHttp = httpContext.Request.Method;
+
+            // EXEMPLO DE USO: Se você quiser saber o nome amigável do Endpoint:
+            var nomeEndpoint = endpoint?.DisplayName; 
+        }
+        
         // 1. Extrai as informações de identificação gravadas no Token JWT
         var usuarioIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var tenantIdClaim = context.User.FindFirst("TenantId")?.Value;

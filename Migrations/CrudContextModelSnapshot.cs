@@ -118,7 +118,13 @@ namespace crud.Migrations
                     b.Property<string>("Descricao")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("EndPoint")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Menu")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Metodo")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Rota")

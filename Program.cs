@@ -192,5 +192,6 @@ app.MapLoginRoutes(chaveEmBytes);
 app.MapPerfilRoutes();
 app.MapUsuarioRoutes();
 app.MapTenantRoutes();
+app.MapNivelAcessoRoutes();
 
 app.Run();
