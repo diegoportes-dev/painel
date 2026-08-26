@@ -102,7 +102,7 @@ public static class PerfilRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
 
         route.MapPost("", 
@@ -162,7 +162,7 @@ public static class PerfilRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{perfil.Id}", new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
                                               
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapGet("/{id:guid}", 
             async Task<IResult> (
@@ -180,7 +180,7 @@ public static class PerfilRoute
                 
                 return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapPut("/{id:guid}", 
             async Task<IResult> (
@@ -218,7 +218,7 @@ public static class PerfilRoute
                 return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
                    
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapDelete("/{id:guid}", 
             async Task<IResult> (
@@ -252,7 +252,7 @@ public static class PerfilRoute
 
                 return TypedResults.NoContent();
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapPatch("/{id:guid}", 
             async Task<IResult> (
@@ -291,7 +291,7 @@ public static class PerfilRoute
 
                 return TypedResults.Ok(new PerfilResourceResponse(new PerfilOutputDto(perfil), links));
             }
-        ).RequireAuthorization();        
+        ).RequireAuthorization("ValidarRequisitosPerfil");       
     }
     
 }

@@ -106,7 +106,7 @@ public static class NivelAcessoRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 2. POST (Criação herdando dinamicamente o TenantId do Operador)
         route.MapPost("", 
@@ -165,7 +165,7 @@ public static class NivelAcessoRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{nivelAcesso.Id}", 
                     new NivelAcessoResourceResponse(new NivelAcessoOutputDto(nivelAcesso), links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 3. GET BY ID
         route.MapGet("/{id:guid}", 
@@ -188,7 +188,7 @@ public static class NivelAcessoRoute
                 
                 return TypedResults.Ok(new NivelAcessoResourceResponse(new NivelAcessoOutputDto(nivelAcesso), links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 4. PUT
         route.MapPut("/{id:guid}", 
@@ -225,7 +225,7 @@ public static class NivelAcessoRoute
                 List<HyperLink> links = Links.GenerateLinks(httpContext, nivelAcesso.Id, prefixo);
 
         return TypedResults.Ok(new NivelAcessoResourceResponse(new NivelAcessoOutputDto(nivelAcesso), links));
-        }).RequireAuthorization();
+        }).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 5. DELETE
         route.MapDelete("/{id:guid}", 
@@ -245,7 +245,7 @@ public static class NivelAcessoRoute
 
                 return TypedResults.NoContent();
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
 
 
@@ -260,7 +260,7 @@ public static class NivelAcessoRoute
 
             // 🔓 Agora o tipo bate perfeitamente com a assinatura do record!
             return TypedResults.Ok(new NivelAcessoRotaResourceResponse(response));
-        }).RequireAuthorization();
+        }).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapPost("/matriz", 
         async (
@@ -310,7 +310,7 @@ public static class NivelAcessoRoute
                 await transaction.RollbackAsync();
                 return Results.Json(new { message = $"Erro ao gravar matriz: {ex.Message}" }, statusCode: 500);
             }
-        }).RequireAuthorization();
+        }).RequireAuthorization("ValidarRequisitosPerfil");
 
     }
 }

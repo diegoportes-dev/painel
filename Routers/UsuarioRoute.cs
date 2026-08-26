@@ -150,7 +150,7 @@ public static class UsuarioRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{usuario.Id}", new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
 
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapGet("/{id:guid}", 
             async Task<IResult> (
@@ -172,7 +172,7 @@ public static class UsuarioRoute
 
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuario), links));
             }
-        ).RequireAuthorization(); 
+        ).RequireAuthorization("ValidarRequisitosPerfil"); 
 
         route.MapPut("/{id:guid}",
             async Task<IResult>(
@@ -227,7 +227,7 @@ public static class UsuarioRoute
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
                  
             }   
-        ).RequireAuthorization(); 
+        ).RequireAuthorization("ValidarRequisitosPerfil"); 
 
         route.MapDelete("/{id:guid}",
             async Task<IResult> (
@@ -247,7 +247,7 @@ public static class UsuarioRoute
 
                 return Results.NoContent();
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapPatch("/{id:guid}",
             async Task<IResult> (
@@ -298,7 +298,7 @@ public static class UsuarioRoute
 
                 return TypedResults.Ok(new UsuarioResourceResponse(new UsuarioOutputDto(usuarioCommit), links));
             }
-    ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         
     }

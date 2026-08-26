@@ -71,7 +71,7 @@ public static class TenantRoute
                     new PaginationMetadata(pageNumber, requestedPageSize, totalItems, totalPages),
                     links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 2. POST (Criação de Tenant com Geração Automática de Slug)
         route.MapPost("", 
@@ -122,7 +122,7 @@ public static class TenantRoute
                 return TypedResults.Created($"{Links.BaseUrl(httpContext)}/{prefixo}/{tenant.Id}", 
                     new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 3. GET BY ID
         route.MapGet("/{id:guid}", 
@@ -141,7 +141,7 @@ public static class TenantRoute
                 
                 return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 4. PUT (Atualização cadastral sem alteração de infraestrutura)
         route.MapPut("/{id:guid}", 
@@ -184,7 +184,7 @@ public static class TenantRoute
 
                 return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         // 5. DELETE
         route.MapDelete("/{id:guid}", 
@@ -203,7 +203,7 @@ public static class TenantRoute
 
                 return TypedResults.NoContent();
             }
-        ).RequireAuthorization();
+        ).RequireAuthorization("ValidarRequisitosPerfil");
 
         route.MapPatch("/{id:guid}", 
             async Task<IResult> (
@@ -250,7 +250,7 @@ public static class TenantRoute
 
                     return TypedResults.Ok(new TenantResourceResponse(new TenantOutputDto(tenant), links));
                 }
-            ).RequireAuthorization();
+            ).RequireAuthorization("ValidarRequisitosPerfil");
 
         //SQLLite
         app.MapPost("/auth/setup-cadastro-sqlite", 
