@@ -14,9 +14,11 @@ using FluentValidation;
 using Crud.Routers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // 1. CARREGAR A CHAVE DINAMICAMENTE DO APPSETTINGS.JSON
 var chaveSecreta = builder.Configuration["JwtSettings:ChaveSecreta"];
@@ -86,6 +88,18 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+//Definições CORs
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5173","http://localhost:5174") // Porta padrão do Vite
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 // Registra o Handler no sistema de Injeção de Dependência
 builder.Services.AddScoped<IAuthorizationHandler, RequisitoAcessoHandler>();
 
@@ -100,6 +114,9 @@ builder.Services.Configure<DatabaseConfig>(builder.Configuration.GetSection("Dat
 
 // Registra o serviço de e-mail
 builder.Services.AddTransient<IEmailService, MailKitEmailService>();
+
+// Adiciona suporte a SignalR
+builder.Services.AddSignalR();
 
 //Validadores
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -127,17 +144,6 @@ builder.Services.AddDbContext<TenantDbContext>();
 
 // Obrigatório para o validador ler o token
 builder.Services.AddHttpContextAccessor(); 
-
-//Definições CORs
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins("http://localhost:5173") // Porta padrão do Vite
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
 
 var app = builder.Build();
 
@@ -182,6 +188,8 @@ app.UseExceptionHandler(exceptionApp =>
     });
 });
 
+var painelHub = app.MapHub<PainelHub>("/painelHub");
+
 // 4. ATIVAR MIDDLEWARES DE SEGURANÇA (Obrigatório antes das rotas)
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -193,5 +201,16 @@ app.MapPerfilRoutes();
 app.MapUsuarioRoutes();
 app.MapTenantRoutes();
 app.MapNivelAcessoRoutes();
+app.MapPainelRoutes();
 
 app.Run();
+
+#region Classes de Suporte e Infraestrutura do SignalR
+
+// Definição da Classe de Hub do SignalR necessária para expor o pipeline de conexão do WebSocket
+public class PainelHub : Hub 
+{ 
+    // Pode permanecer vazia; serve apenas como o ponto de entrada de conexões das telas
+}
+
+#endregion

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: painel-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: JwtSettings__ChaveSecreta
+        generateValue: true
+      - key: ConnectionStrings__CentralConnection
+        sync: false

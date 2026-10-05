@@ -12,6 +12,22 @@ Uma API Minimalista desenvolvida em ASP.NET Core para operações de CRUD (Creat
 * **MailKit** (Envio robusto e assíncrono de e-mails via SMTP)
 * **BCrypt.Net-Next** (Criptografia segura de senhas com hashing)
 
+## ☁️ Implantação no Render
+
+O repositório inclui um `render.yaml` e um Dockerfile multi-stage para publicar a API como um **Web Service** no Render:
+
+1. Envie o repositório para o GitHub e, no Render, selecione **New > Blueprint** e conecte esse repositório. O Render usará o `render.yaml` para criar o serviço.
+2. Informe `ConnectionStrings__CentralConnection` quando solicitado. Use a string de conexão do seu servidor MySQL externo; o Render não fornece MySQL gerenciado.
+3. O segredo `JwtSettings__ChaveSecreta` é gerado pelo Blueprint. Se configurar o serviço manualmente, crie essa variável com pelo menos 32 caracteres.
+4. Faça o deploy. O container escuta na porta informada pelo Render (`PORT`, com fallback local para `10000`).
+
+Configure também no painel do Render as variáveis necessárias para os recursos que utilizar:
+
+* SMTP: `EmailSettings__SmtpServer`, `EmailSettings__Port`, `EmailSettings__SenderName`, `EmailSettings__SenderEmail`, `EmailSettings__Username` e `EmailSettings__Password`.
+* Criação de bancos de tenants: `DatabaseConfig__ServidorMaster`, `DatabaseConfig__UsuarioMaster`, `DatabaseConfig__SenhaMaster`, `DatabaseConfig__ServidorTenant`, `DatabaseConfig__UsuarioTenant` e `DatabaseConfig__SenhaTenant`.
+
+Use valores e credenciais do seu provedor de banco/e-mail e mantenha segredos nas variáveis de ambiente do Render, nunca no repositório. O serviço principal usa MySQL e precisa de um servidor MySQL acessível pela rede; o banco SQLite local não é armazenamento persistente apropriado para produção no Render.
+
 ## 📦 Como Executar o Projeto
 
 Siga os passos abaixo para clonar e rodar o projeto localmente na sua máquina:

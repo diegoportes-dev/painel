@@ -10,6 +10,7 @@ public class CrudContext() : DbContext
     public DbSet<TenantModel>Tenants{ get; set;}
     public DbSet<RotaModel>Rotas{get; set;}
     public DbSet<NivelAcessoModel>NiveisAcessos{get; set;}
+    public DbSet<AtendimentoModel>Atendimentos{get; set;}
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -50,6 +51,7 @@ public class CrudContext() : DbContext
             .WithMany()
             .HasForeignKey(u => u.PefilId)
             .OnDelete(DeleteBehavior.Restrict);
+
     }
 
     // // SQLLite

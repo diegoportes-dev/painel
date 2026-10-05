@@ -22,6 +22,59 @@ namespace crud.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("AtendimentoModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Ativo")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DataFinalizacaoAtendimento")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DataInicioAtendimento")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("GuicheAtual")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NomeCliente")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("NumeroAtual")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Observacao")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Prefixo")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Prioridade")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Atendimentos");
+                });
+
             modelBuilder.Entity("NivelAcessoModel", b =>
                 {
                     b.Property<Guid>("Id")
