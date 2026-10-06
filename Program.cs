@@ -93,10 +93,14 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173","http://localhost:5174") // Porta padrão do Vite
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+    policy.WithOrigins(
+            "http://localhost:5173",
+            "http://localhost:5174", 
+            "https://painel-frontend-rwsu.onrender.com",
+            "https://onrender.com") 
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
