@@ -11,8 +11,5 @@ obj/
 *.sqlite-wal
 *.sqlite-shm
 *.db
-Migrations/
-migrations/
-
 # --- Configurações de Ambiente Local ---
 appsettings.Development.json
