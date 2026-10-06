@@ -97,8 +97,10 @@ builder.Services.AddCors(options =>
             "http://localhost:5173",
             "http://localhost:5174", 
             "https://painel-frontend-rwsu.onrender.com",
+            "https://painel-frontend-rwsu.onrender.com/",
             "https://onrender.com",
-            "https://painel-atendimento-9yy8.onrender.com") 
+            "https://painel-atendimento-9yy8.onrender.com",
+            "https://painel-atendimento-9yy8.onrender.com/") 
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
