@@ -93,18 +93,10 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        // policy.WithOrigins(
-        //         "http://localhost:5173",
-        //         "http://localhost:5174", 
-        //         "https://painel-frontend-rwsu.onrender.com",
-        //         "https://painel-frontend-rwsu.onrender.com/",
-        //         "https://onrender.com",
-        //         "https://painel-atendimento-9yy8.onrender.com",
-        //         "https://painel-atendimento-9yy8.onrender.com/") 
-            policy.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            // .AllowCredentials();
+        policy.SetIsOriginAllowed(origin => true) // Autoriza dinamicamente qualquer origem chamando a API
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
